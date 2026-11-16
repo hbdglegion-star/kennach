@@ -15,88 +15,153 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script>
 
-/* Kennach autonome : Gmail, Agenda et Drive en direct avec Google (sans serveur) */
+/* Kennach autonome : comptes Google et Microsoft (mails, agenda, sauvegarde), sans serveur */
 (function(){
- var S={work:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly","email"],
-        backup:["https://www.googleapis.com/auth/drive.file","email"]};
- var LS=function(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem("kg_"+k)||"null");if(v===null)localStorage.removeItem("kg_"+k);else localStorage.setItem("kg_"+k,JSON.stringify(v))}catch(e){return null}};
- var gisP=null;function gis(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();if(gisP)return gisP;
-  gisP=new Promise(function(res,rej){var s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.onload=function(){res()};s.onerror=function(){gisP=null;rej({code:"unavailable",message:"Google injoignable"})};document.head.appendChild(s)});return gisP}
- function clientId(){return window.KG_CLIENT||""}
- function acct(kind){return LS("acct_"+kind)}
- function tokOk(kind){var t=LS("tok_"+kind);return t&&t.exp>Date.now()+60000?t.at:null}
+ var LS=function(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem("kp_"+k)||"null");if(v===null)localStorage.removeItem("kp_"+k);else localStorage.setItem("kp_"+k,JSON.stringify(v))}catch(e){return null}};
  function active(){try{return !!(navigator.userActivation&&navigator.userActivation.isActive)}catch(e){return false}}
- function token(kind,force){var t=tokOk(kind);if(t&&!force)return Promise.resolve(t);
-  if(!clientId())return Promise.reject({code:"not_configured",message:"Google pas encore configuré"});
-  if(!force&&!active())return Promise.reject({code:"needs_reauth",message:"Connexion Google à renouveler"});
-  return gis().then(function(){return new Promise(function(res,rej){var a=acct(kind);
-   var c=google.accounts.oauth2.initTokenClient({client_id:clientId(),scope:S[kind].join(" "),hint:a&&a.email||undefined,prompt:a?"":"select_account consent",
-    callback:function(r){if(r.error)return rej({code:r.error==="access_denied"?"consent_required":"needs_reauth",message:r.error_description||r.error});
-     LS("tok_"+kind,{at:r.access_token,exp:Date.now()+((+r.expires_in||3600)*1000)});
-     fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+r.access_token}}).then(function(x){return x.json()}).then(function(u){if(u&&u.email)LS("acct_"+kind,{email:u.email});res(r.access_token);window.dispatchEvent(new Event("kg-change"))}).catch(function(){res(r.access_token)})},
-    error_callback:function(e){rej({code:e&&e.type==="popup_closed"?"consent_required":"needs_reauth",message:e&&e.type||"popup"})}});
-   c.requestAccessToken()})})}
- function api(kind,url,opt,retry){opt=opt||{};return token(kind).then(function(t){var h=Object.assign({Authorization:"Bearer "+t},opt.headers||{});
+ function E(code,msg,extra){var e={code:code,message:msg||code};if(extra)for(var k in extra)e[k]=extra[k];return e}
+ var SC={google:{mail:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly"],backup:["https://www.googleapis.com/auth/drive.file"],base:["email"]},
+         ms:{mail:["Mail.ReadWrite","Calendars.Read"],backup:["Files.ReadWrite.AppFolder"],base:["openid","profile","email","offline_access","User.Read"]}};
+ function scopes(acc){var s=SC[acc.prov];var o=s.base.slice();if(acc.roles&&acc.roles.mail)o=o.concat(s.mail);if(acc.roles&&acc.roles.backup)o=o.concat(s.backup);return o}
+ function cfg(){return window.KCFG||{}}
+ /* ---------- Google (GIS) ---------- */
+ var gisP=null;function gis(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();if(gisP)return gisP;
+  gisP=new Promise(function(res,rej){var s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.onload=function(){res()};s.onerror=function(){gisP=null;rej(E("unavailable","Google injoignable"))};document.head.appendChild(s)});return gisP}
+ function gToken(acc,interactive){var sc=scopes(acc).join(" ");var t=LS("tok_"+acc.id);if(t&&t.exp>Date.now()+60000&&t.sc===sc)return Promise.resolve(t.at);
+  if(!cfg().google)return Promise.reject(E("not_configured","Identifiant Google manquant"));
+  if(!interactive&&!active())return Promise.reject(E("needs_reauth","Connexion Google à renouveler"));
+  return gis().then(function(){return new Promise(function(res,rej){var c=google.accounts.oauth2.initTokenClient({client_id:cfg().google,scope:sc,hint:acc.email||undefined,prompt:acc.email?"":"select_account consent",
+   callback:function(r){if(r.error)return rej(E(r.error==="access_denied"?"consent_required":"needs_reauth",r.error_description||r.error));
+    LS("tok_"+acc.id,{at:r.access_token,exp:Date.now()+((+r.expires_in||3600)*1000),sc:sc});
+    if(acc.email)return res(r.access_token);
+    fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+r.access_token}}).then(function(x){return x.json()}).then(function(u){acc.email=u&&u.email||"";res(r.access_token)}).catch(function(){res(r.access_token)})},
+   error_callback:function(e){rej(E(e&&e.type==="popup_closed"?"consent_required":"needs_reauth",e&&e.type))}});c.requestAccessToken()})})}
+ /* ---------- Microsoft (code + PKCE, sans bibliothèque) ---------- */
+ var MS="https://login.microsoftonline.com/common/oauth2/v2.0/";
+ function redirectUri(){return location.origin+location.pathname.replace(/[^/]*$/,"")+"auth.html"}
+ function rnd(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return b64u(a)}
+ function b64u(a){var s="";for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+ function sha(s){return crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)).then(function(h){return b64u(new Uint8Array(h))})}
+ function jwt(t){try{return JSON.parse(atob(t.split(".")[1].replace(/-/g,"+").replace(/_/g,"/")))}catch(e){return{}}}
+ function msTokenReq(body){return fetch(MS+"token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(body).toString()}).then(function(r){return r.json().then(function(j){if(!r.ok||j.error)throw E(/consent|AADSTS65001|AADSTS90094/.test(j.error_description||"")?"admin_consent":j.error==="invalid_grant"?"needs_reauth":"ms_error",(j.error_description||j.error||"").split("\r\n")[0]);return j})})}
+ function msSave(acc,j,sc){var t={at:j.access_token,exp:Date.now()+((+j.expires_in||3600)*1000),sc:sc};var old=LS("tok_"+acc.id)||{};t.rt=j.refresh_token||old.rt;t.rtExp=j.refresh_token?Date.now()+23*3600e3:old.rtExp;LS("tok_"+acc.id,t);if(j.id_token){var c=jwt(j.id_token);acc.email=acc.email||c.preferred_username||c.email||""}return t.at}
+ function msPopup(acc,sc){if(!cfg().ms)return Promise.reject(E("not_configured","Identifiant Microsoft manquant"));
+  var ver=rnd(48),st=rnd(16);return sha(ver).then(function(ch){
+   var u=MS+"authorize?"+new URLSearchParams({client_id:cfg().ms,response_type:"code",redirect_uri:redirectUri(),response_mode:"query",scope:sc,state:st,code_challenge:ch,code_challenge_method:"S256",prompt:acc.email?"select_account":"select_account",login_hint:acc.email||""}).toString();
+   return new Promise(function(res,rej){var done=false;localStorage.removeItem("kauth_result");var w=window.open(u,"kauth","width=520,height=680");if(!w)return rej(E("popup_blocked","Fenêtre bloquée"));
+    function finish(q){if(done)return;done=true;clearInterval(iv);window.removeEventListener("message",onMsg);window.removeEventListener("storage",onSt);try{w.close()}catch(e){}var p=new URLSearchParams(q);
+     if(p.get("error"))return rej(E(/consent|AADSTS65001|admin/i.test(p.get("error_description")||"")?"admin_consent":p.get("error")==="access_denied"?"consent_required":"ms_error",(p.get("error_description")||p.get("error")).split("\r\n")[0]));
+     if(p.get("state")!==st)return rej(E("ms_error","État invalide"));
+     msTokenReq({client_id:cfg().ms,grant_type:"authorization_code",code:p.get("code"),redirect_uri:redirectUri(),code_verifier:ver,scope:sc}).then(function(j){res(msSave(acc,j,sc))},rej)}
+    function onMsg(e){if(e.origin===location.origin&&e.data&&e.data.kauth!=null)finish(e.data.kauth)}
+    function onSt(e){if(e.key==="kauth_result"&&e.newValue)finish(e.newValue)}
+    window.addEventListener("message",onMsg);window.addEventListener("storage",onSt);
+    var iv=setInterval(function(){var r=localStorage.getItem("kauth_result");if(r){localStorage.removeItem("kauth_result");finish(r)}else if(w.closed&&document.hasFocus()){closedFor+=400;if(closedFor>4000&&!done){done=true;clearInterval(iv);rej(E("consent_required","Fenêtre fermée"))}}},400);var closedFor=0;setTimeout(function(){if(!done){done=true;clearInterval(iv);rej(E("consent_required","Délai dépassé"))}},300000)})})}
+ function msToken(acc,interactive){var sc=scopes(acc).join(" ");var t=LS("tok_"+acc.id);
+  if(t&&t.sc===sc&&t.exp>Date.now()+60000)return Promise.resolve(t.at);
+  if(t&&t.sc===sc&&t.rt&&t.rtExp>Date.now())return msTokenReq({client_id:cfg().ms,grant_type:"refresh_token",refresh_token:t.rt,scope:sc}).then(function(j){return msSave(acc,j,sc)},function(e){LS("tok_"+acc.id,null);if(interactive||active())return msPopup(acc,sc);throw E("needs_reauth","Connexion Microsoft à renouveler")});
+  if(!interactive&&!active())return Promise.reject(E("needs_reauth","Connexion Microsoft à renouveler"));
+  return msPopup(acc,sc)}
+ function token(acc,interactive){return acc.prov==="ms"?msToken(acc,interactive):gToken(acc,interactive)}
+ function api(acc,url,opt,retry){opt=opt||{};return token(acc).then(function(t){var h=Object.assign({Authorization:"Bearer "+t},opt.headers||{});
   return fetch(url,Object.assign({},opt,{headers:h})).then(function(r){
-   if(r.status===401){LS("tok_"+kind,null);if(!retry&&active())return api(kind,url,opt,true);throw{code:"needs_reauth",message:"Session Google expirée"}}
-   if(r.status===403||r.status===400)return r.json().catch(function(){return{}}).then(function(j){var m=(j.error&&j.error.message)||"refusé";throw{code:/insufficient|scope/i.test(m)?"consent_required":/has not been used|disabled/i.test(m)?"api_disabled":"tool_error",message:m}});
-   if(r.status===429)throw{code:"rate_limited",retryable:true};
-   if(!r.ok)throw{code:"upstream_error",message:"HTTP "+r.status,retryable:true};
-   return r.status===204?{}:r.json()})},function(e){throw e}).catch(function(e){if(e&&e.code)throw e;throw{code:"unavailable",message:String(e&&e.message||e),retryable:true}})}
+   if(r.status===401){var x=LS("tok_"+acc.id);if(x){x.exp=0;LS("tok_"+acc.id,x)}if(!retry)return api(acc,url,opt,true);throw E("needs_reauth","Session expirée")}
+   if(r.status===403||r.status===400||r.status===404)return r.json().catch(function(){return{}}).then(function(j){var m=(j.error&&(j.error.message||j.error.code))||("HTTP "+r.status);throw E(/insufficient|scope|Access is denied|AccessDenied|Authorization_RequestDenied/i.test(m)?"consent_required":/has not been used|disabled/i.test(m)?"api_disabled":r.status===404?"not_found":"tool_error",m)});
+   if(r.status===429)throw E("rate_limited","Trop de requêtes",{retryable:true});
+   if(!r.ok)throw E("upstream_error","HTTP "+r.status,{retryable:true});
+   if(opt.raw)return r;return r.status===204?{}:r.json()})}).catch(function(e){if(e&&e.code)throw e;throw E("unavailable",String(e&&e.message||e),{retryable:true})})}
+ /* ---------- outils communs ---------- */
+ function b64d(s){s=String(s||"").replace(/-/g,"+").replace(/_/g,"/");try{var bin=atob(s);var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder("utf-8").decode(u)}catch(e){return""}}
+ function b64eUtf(s){var u=new TextEncoder().encode(s);var b="";for(var i=0;i<u.length;i+=0x8000)b+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(b)}
+ function b64url(s){return s.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+ function pool(arr,n,fn){var i=0,out=new Array(arr.length);function next(){if(i>=arr.length)return Promise.resolve();var k=i++;return fn(arr[k]).then(function(v){out[k]=v},function(){out[k]=null}).then(next)}var w=[];for(var j=0;j<Math.min(n,arr.length);j++)w.push(next());return Promise.all(w).then(function(){return out})}
+ function html2txt(h){return String(h||"").replace(/<br\s*\/?>/gi,"\n").replace(/<\/(p|div)>/gi,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#39;/g,"'").replace(/&quot;/g,'"')}
  /* ---------- Gmail ---------- */
  var G="https://gmail.googleapis.com/gmail/v1/users/me/";
  function hdr(m,n){var h=(m.payload&&m.payload.headers||[]).find(function(x){return x.name.toLowerCase()===n.toLowerCase()});return h?h.value:""}
  function addr(v){var m=String(v||"").match(/<([^>]+)>/);return(m?m[1]:String(v||"")).trim().toLowerCase()}
  function dname(v){var m=String(v||"").match(/^\s*"?([^"<]*?)"?\s*</);return m&&m[1]?m[1].trim():addr(v)}
  function addrs(v){return String(v||"").split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(addr).filter(Boolean)}
- function b64d(s){s=String(s||"").replace(/-/g,"+").replace(/_/g,"/");try{var bin=atob(s);var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder("utf-8").decode(u)}catch(e){return""}}
- function b64eUtf(s){var u=new TextEncoder().encode(s);var b="";for(var i=0;i<u.length;i+=0x8000)b+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(b)}
- function b64url(s){return s.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
  function partText(p,mime){if(!p)return"";if(p.mimeType===mime&&p.body&&p.body.data)return b64d(p.body.data);var o="";(p.parts||[]).some(function(x){o=partText(x,mime);return !!o});return o}
  function files(p,out){out=out||[];if(!p)return out;if(p.filename)out.push({filename:p.filename,mimeType:p.mimeType});(p.parts||[]).forEach(function(x){files(x,out)});return out}
- function viewUrl(id){var a=acct("work");return"https://mail.google.com/mail/"+(a?"?authuser="+encodeURIComponent(a.email):"u/0/")+"#all/"+id}
- function pool(arr,n,fn){var i=0,out=new Array(arr.length);function next(){if(i>=arr.length)return Promise.resolve();var k=i++;return fn(arr[k]).then(function(v){out[k]=v},function(){out[k]=null}).then(next)}var w=[];for(var j=0;j<Math.min(n,arr.length);j++)w.push(next());return Promise.all(w).then(function(){return out})}
- function searchThreads(i){return api("work",G+"threads?maxResults="+(i.pageSize||40)+"&q="+encodeURIComponent(i.query||"")).then(function(j){
-  return pool(j.threads||[],8,function(t){return api("work",G+"threads/"+t.id+"?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=To")}).then(function(ts){
-   return{payload:{threads:ts.filter(Boolean).map(function(t){var ms=(t.messages||[]).slice().reverse();return{id:t.id,messageCount:(t.messages||[]).length,viewUrl:viewUrl(t.id),messages:ms.map(function(m){var f=hdr(m,"From");return{id:m.id,sender:addr(f),addressDisplayNames:[{emailAddress:addr(f),displayName:dname(f)}],subject:hdr(m,"Subject"),date:new Date(+m.internalDate).toISOString(),labelIds:m.labelIds||[],snippet:m.snippet||""}})}})}}})})}
- function getThread(i){return api("work",G+"threads/"+i.threadId+"?format=full").then(function(t){return{payload:{messages:(t.messages||[]).map(function(m){var txt=partText(m.payload,"text/plain");if(!txt){var h=partText(m.payload,"text/html");txt=h.replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#39;/g,"'").replace(/&quot;/g,'"')}
-  return{id:m.id,sender:addr(hdr(m,"From")),toRecipients:addrs(hdr(m,"To")),ccRecipients:addrs(hdr(m,"Cc")),date:new Date(+m.internalDate).toISOString(),plaintextBody:txt,snippet:m.snippet,labelIds:m.labelIds||[],attachments:files(m.payload)}})}}})}
- var sigP=null;function signature(){if(sigP)return sigP;sigP=api("work",G+"settings/sendAs").then(function(j){var p=(j.sendAs||[]).find(function(x){return x.isDefault})||(j.sendAs||[])[0]||{};return p.signature||""}).catch(function(){sigP=null;return""});return sigP}
- function enc(s){return/^[\x20-\x7e]*$/.test(s)?s:"=?UTF-8?B?"+b64eUtf(s)+"?="}
- function escH(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>")}
- function wrap(b){return b.replace(/(.{76})/g,"$1\r\n")}
- function createDraft(i){var thr=null,refs="";var pre=i.replyToMessageId?api("work",G+"messages/"+i.replyToMessageId+"?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References").then(function(m){thr=m.threadId;var mid=hdr(m,"Message-ID");refs=(hdr(m,"References")+" "+mid).trim();return mid}):Promise.resolve("");
-  return Promise.all([pre,i.includeSignature?signature():Promise.resolve("")]).then(function(r){var mid=r[0],sig=r[1];var B="kn"+Math.random().toString(36).slice(2),A="ka"+Math.random().toString(36).slice(2);
-   var H=["MIME-Version: 1.0"];if(i.to&&i.to.length)H.push("To: "+i.to.join(", "));if(i.cc&&i.cc.length)H.push("Cc: "+i.cc.join(", "));H.push("Subject: "+enc(i.subject||""));if(mid){H.push("In-Reply-To: "+mid);H.push("References: "+refs)}
-   var body=String(i.body||"");var alt=["--"+A,"Content-Type: text/plain; charset=UTF-8","Content-Transfer-Encoding: base64","",wrap(b64eUtf(body+(sig?"\n\n--\n"+sig.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g,""):""))),"--"+A,"Content-Type: text/html; charset=UTF-8","Content-Transfer-Encoding: base64","",wrap(b64eUtf("<div dir=\"ltr\">"+escH(body)+"</div>"+(sig?"<br><div class=\"gmail_signature\">"+sig+"</div>":""))),"--"+A+"--"].join("\r\n");
-   var at=(i.attachments||[]).filter(function(a){return typeof a.content==="string"});var raw;
-   if(at.length){raw=H.concat(["Content-Type: multipart/mixed; boundary=\""+B+"\"","","--"+B,"Content-Type: multipart/alternative; boundary=\""+A+"\"","",alt].concat(at.map(function(a){return["--"+B,"Content-Type: "+(a.mimeType||"application/octet-stream")+"; name=\""+enc(a.filename)+"\"","Content-Disposition: attachment; filename=\""+enc(a.filename)+"\"","Content-Transfer-Encoding: base64","",wrap(a.content)].join("\r\n")})).concat(["--"+B+"--"])).join("\r\n")}
-   else raw=H.concat(["Content-Type: multipart/alternative; boundary=\""+A+"\"","",alt]).join("\r\n");
-   return api("work",G+"drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:Object.assign({raw:b64url(b64eUtf(raw))},thr?{threadId:thr}:{})})}).then(function(d){var a=acct("work");return{payload:{id:d.id,viewUrl:"https://mail.google.com/mail/"+(a?"?authuser="+encodeURIComponent(a.email):"u/0/")+"#drafts"}}})})}
- /* ---------- Agenda ---------- */
- function listEvents(i){var q="singleEvents=true&orderBy=startTime&maxResults="+Math.min(250,i.pageSize||250)+"&timeMin="+encodeURIComponent(new Date(i.startTime).toISOString())+"&timeMax="+encodeURIComponent(new Date(i.endTime).toISOString())+(i.pageToken?"&pageToken="+encodeURIComponent(i.pageToken):"");
-  return api("work","https://www.googleapis.com/calendar/v3/calendars/primary/events?"+q).then(function(j){return{payload:{nextPageToken:j.nextPageToken,events:(j.items||[]).map(function(e){var v=e.conferenceData&&(e.conferenceData.entryPoints||[]).find(function(x){return x.entryPointType==="video"});return Object.assign({},e,{conferenceUrl:e.hangoutLink||(v&&v.uri)||""})})}}})}
- /* ---------- Drive (sauvegardes) ---------- */
- var D="https://www.googleapis.com/drive/v3/files";var FOLDER="Kennach - Sauvegardes";
- function folder(){var f=LS("drive_folder");if(f)return Promise.resolve(f);
-  return api("backup",D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+FOLDER+"' and trashed=false")+"&fields=files(id)").then(function(j){if(j.files&&j.files[0]){LS("drive_folder",j.files[0].id);return j.files[0].id}
-   return api("backup",D+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:FOLDER,mimeType:"application/vnd.google-apps.folder"})}).then(function(x){LS("drive_folder",x.id);return x.id})})}
- window.KDrive={
-  save:function(name,text){return folder().then(function(fid){var B="kb"+Math.random().toString(36).slice(2);var body="--"+B+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:name,parents:[fid],mimeType:"application/json"})+"\r\n--"+B+"\r\nContent-Type: application/json\r\n\r\n"+text+"\r\n--"+B+"--";
-   return api("backup","https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,createdTime",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+B},body:body})}).catch(function(e){if(e&&e.code==="tool_error"&&/notFound|File not found/i.test(e.message||"")){LS("drive_folder",null)}throw e})},
-  list:function(){return folder().then(function(fid){return api("backup",D+"?q="+encodeURIComponent("'"+fid+"' in parents and trashed=false")+"&orderBy=createdTime desc&pageSize=60&fields=files(id,name,size,createdTime)").then(function(j){return j.files||[]})})},
-  get:function(id){return token("backup").then(function(t){return fetch(D+"/"+id+"?alt=media",{headers:{Authorization:"Bearer "+t}}).then(function(r){if(!r.ok)throw{code:"upstream_error"};return r.text()})})},
-  del:function(id){return api("backup",D+"/"+id,{method:"DELETE"})}};
- window.KG={account:acct,connected:function(k){return !!acct(k)},valid:function(k){return !!tokOk(k)},configured:function(){return !!clientId()},
-  connect:function(k){return token(k,true)},
-  disconnect:function(k){var t=LS("tok_"+k);LS("tok_"+k,null);LS("acct_"+k,null);if(k==="backup")LS("drive_folder",null);try{t&&window.google&&google.accounts.oauth2.revoke(t.at,function(){})}catch(e){}window.dispatchEvent(new Event("kg-change"))}};
+ function gView(acc,frag){return"https://mail.google.com/mail/?authuser="+encodeURIComponent(acc.email||"")+"#"+frag}
+ var gmail={
+  search:function(acc,i){return api(acc,G+"threads?maxResults="+(i.pageSize||40)+"&q="+encodeURIComponent(i.query||"")).then(function(j){
+   return pool(j.threads||[],8,function(t){return api(acc,G+"threads/"+t.id+"?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date")}).then(function(ts){
+    return{payload:{threads:ts.filter(Boolean).map(function(t){var ms=(t.messages||[]).slice().reverse();return{id:t.id,messageCount:(t.messages||[]).length,viewUrl:gView(acc,"all/"+t.id),messages:ms.map(function(m){var f=hdr(m,"From");return{id:m.id,sender:addr(f),addressDisplayNames:[{emailAddress:addr(f),displayName:dname(f)}],subject:hdr(m,"Subject"),date:new Date(+m.internalDate).toISOString(),labelIds:m.labelIds||[],snippet:m.snippet||""}})}})}}})})},
+  thread:function(acc,i){return api(acc,G+"threads/"+i.threadId+"?format=full").then(function(t){return{payload:{messages:(t.messages||[]).map(function(m){var txt=partText(m.payload,"text/plain")||html2txt(partText(m.payload,"text/html"));
+   return{id:m.id,sender:addr(hdr(m,"From")),toRecipients:addrs(hdr(m,"To")),ccRecipients:addrs(hdr(m,"Cc")),date:new Date(+m.internalDate).toISOString(),plaintextBody:txt,snippet:m.snippet,labelIds:m.labelIds||[],attachments:files(m.payload)}})}}})},
+  sig:{},signature:function(acc){var s=this.sig;if(s[acc.id])return s[acc.id];s[acc.id]=api(acc,G+"settings/sendAs").then(function(j){var p=(j.sendAs||[]).find(function(x){return x.isDefault})||(j.sendAs||[])[0]||{};return p.signature||""}).catch(function(){delete s[acc.id];return""});return s[acc.id]},
+  draft:function(acc,i){var thr=null,refs="";var pre=i.replyToMessageId?api(acc,G+"messages/"+i.replyToMessageId+"?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References").then(function(m){thr=m.threadId;var mid=hdr(m,"Message-ID");refs=(hdr(m,"References")+" "+mid).trim();return mid}):Promise.resolve("");
+   return Promise.all([pre,i.includeSignature?this.signature(acc):Promise.resolve("")]).then(function(r){var mid=r[0],sig=r[1];var B="kn"+Math.random().toString(36).slice(2),A="ka"+Math.random().toString(36).slice(2);
+    var enc=function(s){return/^[\x20-\x7e]*$/.test(s)?s:"=?UTF-8?B?"+b64eUtf(s)+"?="};var wrap=function(b){return b.replace(/(.{76})/g,"$1\r\n")};var escH=function(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>")};
+    var H=["MIME-Version: 1.0"];if(i.to&&i.to.length)H.push("To: "+i.to.join(", "));H.push("Subject: "+enc(i.subject||""));if(mid){H.push("In-Reply-To: "+mid);H.push("References: "+refs)}
+    var body=String(i.body||"");var alt=["--"+A,"Content-Type: text/plain; charset=UTF-8","Content-Transfer-Encoding: base64","",wrap(b64eUtf(body+(sig?"\n\n--\n"+html2txt(sig):""))),"--"+A,"Content-Type: text/html; charset=UTF-8","Content-Transfer-Encoding: base64","",wrap(b64eUtf("<div dir=\"ltr\">"+escH(body)+"</div>"+(sig?"<br><div class=\"gmail_signature\">"+sig+"</div>":""))),"--"+A+"--"].join("\r\n");
+    var at=(i.attachments||[]).filter(function(a){return typeof a.content==="string"});var raw;
+    if(at.length)raw=H.concat(["Content-Type: multipart/mixed; boundary=\""+B+"\"","","--"+B,"Content-Type: multipart/alternative; boundary=\""+A+"\"","",alt].concat(at.map(function(a){return["--"+B,"Content-Type: "+(a.mimeType||"application/octet-stream")+"; name=\""+enc(a.filename)+"\"","Content-Disposition: attachment; filename=\""+enc(a.filename)+"\"","Content-Transfer-Encoding: base64","",wrap(a.content)].join("\r\n")})).concat(["--"+B+"--"])).join("\r\n");
+    else raw=H.concat(["Content-Type: multipart/alternative; boundary=\""+A+"\"","",alt]).join("\r\n");
+    return api(acc,G+"drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:Object.assign({raw:b64url(b64eUtf(raw))},thr?{threadId:thr}:{})})}).then(function(d){return{payload:{id:d.id,viewUrl:gView(acc,"drafts")}}})})}};
+ /* ---------- Outlook (Microsoft Graph) ---------- */
+ var GR="https://graph.microsoft.com/v1.0/me/";
+ var outlook={
+  me:{},myMail:function(acc){var s=this.me;if(s[acc.id])return s[acc.id];s[acc.id]=api(acc,GR+"?$select=mail,userPrincipalName").then(function(u){return String(u.mail||u.userPrincipalName||acc.email||"").toLowerCase()}).catch(function(){delete s[acc.id];return String(acc.email||"").toLowerCase()});return s[acc.id]},
+  search:function(acc,i){var since=new Date(Date.now()-14*864e5).toISOString();var self=this;
+   return Promise.all([api(acc,GR+"mailFolders/inbox/messages?$top=50&$orderby=receivedDateTime desc&$filter="+encodeURIComponent("receivedDateTime ge "+since)+"&$select=id,conversationId,subject,from,receivedDateTime,bodyPreview,webLink,inferenceClassification"),
+    api(acc,GR+"mailFolders/sentitems/messages?$top=50&$orderby=sentDateTime desc&$filter="+encodeURIComponent("sentDateTime ge "+since)+"&$select=conversationId,sentDateTime").catch(function(){return{value:[]}})]).then(function(r){
+    var sent={};(r[1].value||[]).forEach(function(m){var t=+new Date(m.sentDateTime);if(!sent[m.conversationId]||sent[m.conversationId]<t)sent[m.conversationId]=t});
+    var by={},order=[];(r[0].value||[]).filter(function(m){return m.inferenceClassification!=="other"}).forEach(function(m){if(!by[m.conversationId]){by[m.conversationId]=[];order.push(m.conversationId)}by[m.conversationId].push(m)});
+    return{payload:{threads:order.slice(0,i.pageSize||40).map(function(cid){var ms=by[cid];var m=ms[0];var f=m.from&&m.from.emailAddress||{};var replied=sent[cid]&&sent[cid]>+new Date(m.receivedDateTime);
+     return{id:cid,messageCount:ms.length,viewUrl:m.webLink,messages:[{id:m.id,sender:replied?"__moi__":String(f.address||"").toLowerCase(),addressDisplayNames:[{emailAddress:String(f.address||"").toLowerCase(),displayName:f.name||f.address||""}],subject:m.subject||"",date:m.receivedDateTime,labelIds:replied?["SENT"]:["INBOX"],snippet:m.bodyPreview||"",viewUrl:m.webLink}]}})}}})},
+  thread:function(acc,i){var self=this;return Promise.all([self.myMail(acc),api(acc,GR+"messages?$top=25&$filter="+encodeURIComponent("conversationId eq '"+String(i.threadId).replace(/'/g,"''")+"'")+"&$select=id,from,toRecipients,ccRecipients,receivedDateTime,body,bodyPreview,hasAttachments",{headers:{Prefer:'outlook.body-content-type="text"'}})]).then(function(r){var me=r[0];
+   var ms=(r[1].value||[]).sort(function(a,b){return new Date(a.receivedDateTime)-new Date(b.receivedDateTime)});
+   return pool(ms,4,function(m){return m.hasAttachments?api(acc,GR+"messages/"+m.id+"/attachments?$select=name,contentType").then(function(a){return a.value||[]}):Promise.resolve([])}).then(function(att){
+    return{payload:{messages:ms.map(function(m,k){var f=String(m.from&&m.from.emailAddress&&m.from.emailAddress.address||"").toLowerCase();return{id:m.id,sender:f,toRecipients:(m.toRecipients||[]).map(function(x){return x.emailAddress.address}),ccRecipients:(m.ccRecipients||[]).map(function(x){return x.emailAddress.address}),date:m.receivedDateTime,plaintextBody:m.body&&m.body.contentType==="text"?m.body.content:html2txt(m.body&&m.body.content),snippet:m.bodyPreview,labelIds:f===me?["SENT"]:["INBOX"],attachments:(att[k]||[]).map(function(a){return{filename:a.name,mimeType:a.contentType}})}})}}})})},
+  draft:function(acc,i){var body=String(i.body||"");var htmlBody="<div>"+body.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>")+"</div>";
+   var mk=i.replyToMessageId?api(acc,GR+"messages/"+i.replyToMessageId+"/createReply",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).then(function(d){var old=d.body&&d.body.content||"";var merged=d.body&&d.body.contentType==="html"?old.replace(/(<body[^>]*>)/i,"$1"+htmlBody+"<br>"):htmlBody+old;
+     return api(acc,GR+"messages/"+d.id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({body:{contentType:"HTML",content:merged}})}).then(function(){return d})})
+    :api(acc,GR+"messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:i.subject||"",body:{contentType:"HTML",content:htmlBody},toRecipients:(i.to||[]).map(function(a){return{emailAddress:{address:a}}})})});
+   return mk.then(function(d){var at=(i.attachments||[]).filter(function(a){return typeof a.content==="string"});
+    return Promise.all(at.map(function(a){return api(acc,GR+"messages/"+d.id+"/attachments",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({"@odata.type":"#microsoft.graph.fileAttachment",name:a.filename,contentType:a.mimeType,contentBytes:a.content})})})).then(function(){return{payload:{id:d.id,viewUrl:d.webLink||"https://outlook.office.com/mail/drafts"}}})})}};
+ /* ---------- Agendas ---------- */
+ function gcal(acc,i){var q="singleEvents=true&orderBy=startTime&maxResults=250&timeMin="+encodeURIComponent(new Date(i.startTime).toISOString())+"&timeMax="+encodeURIComponent(new Date(i.endTime).toISOString());
+  return api(acc,"https://www.googleapis.com/calendar/v3/calendars/primary/events?"+q).then(function(j){return(j.items||[]).map(function(e){var v=e.conferenceData&&(e.conferenceData.entryPoints||[]).find(function(x){return x.entryPointType==="video"});return Object.assign({},e,{id:"g_"+e.id,conferenceUrl:e.hangoutLink||(v&&v.uri)||""})})})}
+ function mscal(acc,i){var u=GR+"calendarView?startDateTime="+encodeURIComponent(new Date(i.startTime).toISOString())+"&endDateTime="+encodeURIComponent(new Date(i.endTime).toISOString())+"&$top=250&$orderby=start/dateTime&$select=id,subject,start,end,isAllDay,isCancelled,location,onlineMeeting,webLink,attendees,responseStatus,showAs,bodyPreview,isOnlineMeeting";
+  return api(acc,u,{headers:{Prefer:'outlook.timezone="UTC"'}}).then(function(j){return(j.value||[]).map(function(e){var day=function(x){return String(x.dateTime).slice(0,10)};
+   var st=e.isAllDay?{date:day(e.start)}:{dateTime:String(e.start.dateTime).replace(/\.\d+$/,"")+"Z"},en=e.isAllDay?{date:day(e.end)}:{dateTime:String(e.end.dateTime).replace(/\.\d+$/,"")+"Z"};
+   var att=(e.attendees||[]).map(function(a){return{email:a.emailAddress&&a.emailAddress.address,displayName:a.emailAddress&&a.emailAddress.name,responseStatus:a.status&&a.status.response}});
+   if(e.responseStatus&&e.responseStatus.response==="declined")att.push({self:true,responseStatus:"declined"});
+   return{id:"m_"+e.id,summary:e.subject,status:e.isCancelled?"cancelled":"confirmed",start:st,end:en,location:e.location&&e.location.displayName||"",conferenceUrl:e.onlineMeeting&&e.onlineMeeting.joinUrl||"",htmlLink:e.webLink,attendees:att,description:e.bodyPreview||"",eventType:e.showAs==="oof"?"OUT_OF_OFFICE":"DEFAULT"}})})}
+ /* ---------- Sauvegardes ---------- */
+ var gdrive={F:"Kennach - Sauvegardes",D:"https://www.googleapis.com/drive/v3/files",
+  folder:function(acc){var k="gfolder_"+acc.id,f=LS(k),D=this.D,F=this.F;if(f)return Promise.resolve(f);
+   return api(acc,D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+F+"' and trashed=false")+"&fields=files(id)").then(function(j){if(j.files&&j.files[0]){LS(k,j.files[0].id);return j.files[0].id}
+    return api(acc,D+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:F,mimeType:"application/vnd.google-apps.folder"})}).then(function(x){LS(k,x.id);return x.id})})},
+  save:function(acc,name,text){var self=this;return this.folder(acc).then(function(fid){var B="kb"+Math.random().toString(36).slice(2);var body="--"+B+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:name,parents:[fid],mimeType:"application/json"})+"\r\n--"+B+"\r\nContent-Type: application/json\r\n\r\n"+text+"\r\n--"+B+"--";
+   return api(acc,"https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+B},body:body})}).catch(function(e){if(e&&e.code==="not_found")LS("gfolder_"+acc.id,null);throw e})},
+  list:function(acc){var D=this.D;return this.folder(acc).then(function(fid){return api(acc,D+"?q="+encodeURIComponent("'"+fid+"' in parents and trashed=false")+"&orderBy=createdTime desc&pageSize=60&fields=files(id,name,size,createdTime)").then(function(j){return(j.files||[]).map(function(f){return{id:f.id,name:f.name,size:+f.size||0,at:f.createdTime}})})})},
+  get:function(acc,id){return api(acc,this.D+"/"+id+"?alt=media",{raw:true}).then(function(r){return r.text()})},
+  del:function(acc,id){return api(acc,this.D+"/"+id,{method:"DELETE"})}};
+ var onedrive={
+  save:function(acc,name,text){return api(acc,GR+"drive/special/approot:/"+encodeURIComponent(name)+":/content",{method:"PUT",headers:{"Content-Type":"application/json"},body:text})},
+  list:function(acc){return api(acc,GR+"drive/special/approot/children?$select=id,name,size,createdDateTime&$top=100").then(function(j){return(j.value||[]).filter(function(f){return/\.json$/.test(f.name)}).sort(function(a,b){return new Date(b.createdDateTime)-new Date(a.createdDateTime)}).map(function(f){return{id:f.id,name:f.name,size:f.size||0,at:f.createdDateTime}})})},
+  get:function(acc,id){return api(acc,GR+"drive/items/"+id+"/content",{raw:true}).then(function(r){return r.text()})},
+  del:function(acc,id){return api(acc,GR+"drive/items/"+id,{method:"DELETE"})}};
+ /* ---------- interface pour l'app ---------- */
+ function accs(){return(window.KACCS||[]).filter(function(a){return a&&a.id&&a.prov})}
+ function mailAcc(){var L=accs().filter(function(a){return a.roles&&a.roles.mail});var cur=L.find(function(a){return a.id===window.KMAILACC});return cur||L[0]||null}
+ window.KP={
+  token:token,connect:function(acc){LS("tok_"+acc.id,null);return token(acc,true).then(function(){return acc})},
+  forget:function(acc){var t=LS("tok_"+acc.id);LS("tok_"+acc.id,null);LS("gfolder_"+acc.id,null);try{if(t&&acc.prov==="google"&&window.google)google.accounts.oauth2.revoke(t.at,function(){})}catch(e){}},
+  valid:function(acc){var t=LS("tok_"+acc.id);if(!t||t.sc!==scopes(acc).join(" "))return false;return t.exp>Date.now()+60000||(acc.prov==="ms"&&!!t.rt&&t.rtExp>Date.now())},
+  backup:{save:function(acc,n,t){return(acc.prov==="ms"?onedrive:gdrive).save(acc,n,t)},list:function(acc){return(acc.prov==="ms"?onedrive:gdrive).list(acc)},get:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).get(acc,id)},del:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).del(acc,id)}},
+  mailAcc:mailAcc,redirectUri:redirectUri};
  window.KMCP={listTools:function(){return Promise.resolve({servers:[],fileArgs:false})},
-  callTool:function(srv,tool,input){
-   if(srv==="Gmail"&&tool==="search_threads")return searchThreads(input||{});
-   if(srv==="Gmail"&&tool==="get_thread")return getThread(input||{});
-   if(srv==="Gmail"&&tool==="create_draft")return createDraft(input||{});
-   if(srv==="Google Calendar"&&tool==="list_events")return listEvents(input||{});
-   return Promise.reject({code:"server_not_connected",message:srv})}};
+  callTool:function(srv,tool,input){input=input||{};
+   if(srv==="Gmail"){var a=mailAcc();if(!a)return Promise.reject(E("not_configured","Aucun compte mail"));var P=a.prov==="ms"?outlook:gmail;
+    if(tool==="search_threads")return P.search(a,input);if(tool==="get_thread")return P.thread(a,input);if(tool==="create_draft")return P.draft(a,input)}
+   if(srv==="Google Calendar"&&tool==="list_events"){var L=accs().filter(function(a){return a.roles&&a.roles.mail});if(!L.length)return Promise.reject(E("not_configured","Aucun agenda"));
+    return Promise.all(L.map(function(a){return(a.prov==="ms"?mscal:gcal)(a,input).then(function(v){return{v:v}},function(e){return{e:e}})})).then(function(R){var ok=R.filter(function(x){return x.v});if(!ok.length)throw R[0].e;return{payload:{events:[].concat.apply([],ok.map(function(x){return x.v}))}}})}
+   return Promise.reject(E("server_not_connected",srv))}};
 })();
 
 </script>
@@ -114,7 +179,7 @@
 #klogin small{display:block;color:#6F6D66;font-size:12px;margin-top:22px}
 </style>
 <script>
-window.KENNACH_STANDALONE=true;
+window.KENNACH_STANDALONE=true;window.KCFG={google:"",ms:""};
 window.KNAME=function(){var u=window.KUSER;return((u&&u.displayName)||"").split(" ")[0]||""};
 (function(){
  var CFG={"apiKey": "AIzaSyCurP9oMfM-_t7XOh4B5xquVZVjL57m52E", "authDomain": "kennach-daab8.firebaseapp.com", "projectId": "kennach-daab8", "storageBucket": "kennach-daab8.firebasestorage.app", "messagingSenderId": "210665520465", "appId": "1:210665520465:web:705912482e9d6b891f2770"};
@@ -122,15 +187,19 @@ window.KNAME=function(){var u=window.KUSER;return((u&&u.displayName)||"").split(
  if(ok){try{firebase.initializeApp(CFG);auth=firebase.auth();fs=firebase.firestore();try{fs.settings({ignoreUndefinedProperties:true,merge:true})}catch(e){}try{fs.enablePersistence({synchronizeTabs:true}).catch(function(){})}catch(e){}}catch(e){ok=false}}
  var ready;var userP=new Promise(function(r){ready=r});
  function box(){var b=document.getElementById("klogin");if(b)return b;b=document.createElement("div");b.id="klogin";
-  b.innerHTML='<div class="bx"><div class="lg">K</div><h1>Kennach</h1><p>Ton carnet. Partout, même hors connexion.</p><button id="kgo"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Se connecter avec Google</button><div class="er" id="ker"></div><small>Tes notes restent privées : seul ton compte y a accès.</small></div>';
-  document.body.appendChild(b);document.getElementById("kgo").onclick=login;return b}
+  b.innerHTML='<div class="bx"><div class="lg">K</div><h1>Kennach</h1><p>Ton carnet. Partout, même hors connexion.</p><button id="kgo"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Se connecter avec Google</button><button id="kms" style="margin-top:10px;background:#2f2f2f;color:#fff"><svg width="18" height="18" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>Se connecter avec Microsoft</button><div class="er" id="ker"></div><small>Tes notes restent privées : seul ton compte y a accès.</small></div>';
+  document.body.appendChild(b);document.getElementById("kgo").onclick=login;document.getElementById("kms").onclick=loginMS;return b}
  function show(msg){var go=function(){box().classList.add("on");var e=document.getElementById("ker");if(e)e.textContent=msg||""};document.body?go():document.addEventListener("DOMContentLoaded",go)}
  function hide(){var b=document.getElementById("klogin");if(b)b.classList.remove("on")}
  function errTxt(e){var c=e&&e.code||"";if(c==="auth/unauthorized-domain")return"Adresse non autorisée : ajoute ce domaine dans Firebase › Authentication › Paramètres › Domaines autorisés.";if(c==="auth/popup-closed-by-user"||c==="auth/cancelled-popup-request")return"Connexion annulée.";if(c==="auth/network-request-failed")return"Pas de connexion internet.";if(c==="auth/invalid-api-key"||c==="auth/api-key-not-valid.-please-pass-a-valid-api-key.")return"Clé de configuration invalide.";return"Connexion impossible ("+(c||"erreur")+")."}
  function login(){if(!auth)return show("Impossible de charger Firebase (connexion ?).");var p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:"select_account"});
   auth.signInWithPopup(p).catch(function(e){var c=e&&e.code;if(c==="auth/popup-blocked"||c==="auth/operation-not-supported-in-this-environment"||c==="auth/web-storage-unsupported")return auth.signInWithRedirect(p).catch(function(x){show(errTxt(x))});show(errTxt(e))})}
+ var msPending=false;
+ function loginMS(){if(!auth)return show("Impossible de charger Firebase.");var p=new firebase.auth.OAuthProvider("microsoft.com");p.setCustomParameters({prompt:"select_account"});msPending=true;
+  auth.signInWithPopup(p).then(function(r){if(r&&r.additionalUserInfo&&r.additionalUserInfo.isNewUser){return r.user.delete().catch(function(){}).then(function(){return auth.signOut()}).then(function(){msPending=false;show("Ce compte Microsoft n’est pas encore lié à ton carnet. Connecte-toi avec Google, puis Réglages › « Lier un compte Microsoft ».")})}msPending=false;if(auth.currentUser){window.KUSER=auth.currentUser;hide();ready(auth.currentUser)}})
+  .catch(function(e){msPending=false;var c=e&&e.code;show(c==="auth/operation-not-allowed"?"Connexion Microsoft pas encore activée dans Firebase.":c==="auth/account-exists-with-different-credential"?"Cette adresse est déjà liée à Google : connecte-toi avec Google.":errTxt(e))})}
  if(auth){auth.getRedirectResult().catch(function(e){show(errTxt(e))});
-  auth.onAuthStateChanged(function(u){if(u){window.KUSER=u;hide();ready(u)}else show("")})}
+  auth.onAuthStateChanged(function(u){if(u){if(msPending)return;window.KUSER=u;hide();ready(u)}else show("")})}
  else show(navigator.onLine?"Impossible de charger Firebase.":"Pas de connexion internet pour la première ouverture.");
  window.kLogout=function(){auth&&auth.signOut().then(function(){location.reload()})};
  function mapP(p){var uid=window.KUSER.uid;p=String(p);var pre="data/users/"+uid+"/kennach";return p.indexOf(pre)===0?"users/"+uid+"/app/kennach"+p.slice(pre.length):"users/"+uid+"/"+p}
@@ -599,6 +668,89 @@ mark{background:color-mix(in srgb,#F5C518 45%,transparent);color:inherit;border-
 .pa input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
 .pa small{display:block;color:var(--text-3);font-size:12px}
 
+/* ===== Kennach · style Apple ===== */
+:root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI Variable",system-ui,sans-serif;--display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI Variable",system-ui,sans-serif;
+ --bg:#F2F2F7;--surface:#FFFFFF;--surface-2:#EEEEF3;--border:rgba(60,60,67,.13);--text:#000;--text-2:rgba(60,60,67,.62);--text-3:rgba(60,60,67,.38);--accent:#007AFF;--accent-soft:rgba(0,122,255,.12);--ok:#34C759;--warn:#FF9500;--danger:#FF3B30;--wait:#AF52DE;
+ --e1:0 1px 1px rgba(0,0,0,.03),0 2px 10px rgba(0,0,0,.035);--e3:0 24px 64px rgba(0,0,0,.18);--glow:0 6px 20px -6px rgba(0,122,255,.45);--r:16px}
+[data-theme=dark]{--bg:#000;--surface:#1C1C1E;--surface-2:#2C2C2E;--border:rgba(84,84,88,.45);--text:#fff;--text-2:rgba(235,235,245,.62);--text-3:rgba(235,235,245,.32);--accent:#0A84FF;--accent-soft:rgba(10,132,255,.2);--ok:#30D158;--warn:#FF9F0A;--danger:#FF453A;--wait:#BF5AF2;--e1:none;--e3:0 0 0 1px var(--border)}
+@media (prefers-color-scheme:dark){[data-theme=auto]{--bg:#000;--surface:#1C1C1E;--surface-2:#2C2C2E;--border:rgba(84,84,88,.45);--text:#fff;--text-2:rgba(235,235,245,.62);--text-3:rgba(235,235,245,.32);--accent:#0A84FF;--accent-soft:rgba(10,132,255,.2);--ok:#30D158;--warn:#FF9F0A;--danger:#FF453A;--wait:#BF5AF2;--e1:none;--e3:0 0 0 1px var(--border)}}
+body.sa{font-family:var(--font);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;font-feature-settings:normal}
+body.sa .side{background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-right:.5px solid var(--border)}
+body.sa .logo{border-radius:9px;background:linear-gradient(160deg,#5AC8FA,#007AFF 55%,#5856D6);box-shadow:0 2px 8px rgba(0,122,255,.35)}
+body.sa .brand{font-weight:700;letter-spacing:-.02em}
+body.sa .nav{border-radius:9px;padding:7px 10px;font-weight:500;color:var(--text)}
+body.sa .nav svg{color:var(--accent)}
+body.sa .nav:hover{background:color-mix(in srgb,var(--text) 5%,transparent)}
+body.sa .nav.on{background:var(--accent);color:#fff;box-shadow:none}
+body.sa .nav.on svg,body.sa .nav.on .ct{color:#fff}
+body.sa .nav.on::before{display:none}
+body.sa .sec{font-size:12px;letter-spacing:0;text-transform:none;font-weight:600;color:var(--text-2);padding:18px 10px 4px}
+body.sa .capbtn{border-radius:11px;background:var(--surface);box-shadow:var(--e1),0 0 0 .5px var(--border)!important}
+body.sa .hdr h1,body.sa .date-big{font-family:var(--display);font-weight:700;letter-spacing:-.025em}
+body.sa .hdr h1{font-size:34px;line-height:41px}
+body.sa .date-big{font-size:34px;line-height:41px}
+body.sa .greet{font-family:var(--font);font-size:13px;letter-spacing:.02em;text-transform:uppercase;font-weight:600;background:none;-webkit-text-fill-color:var(--accent);color:var(--accent)}
+body.sa .hdr .sub{font-size:15px;color:var(--text-2)}
+body.sa .card,body.sa .list,body.sa .sp,body.sa .cap,body.sa .qk,body.sa .cd,body.sa .bcard,body.sa .toc{box-shadow:var(--e1);border:0;border-radius:var(--r)}
+body.sa .card{padding:16px 18px}
+body.sa .card>b:first-child{font-size:17px;font-weight:600;letter-spacing:-.02em}
+body.sa .cardsub{color:var(--text-2);font-size:14px;margin:4px 0 10px;line-height:20px}
+body.sa .grp{font-size:13px;letter-spacing:-.005em;text-transform:none;font-weight:600;color:var(--text-2);margin:24px 4px 7px}
+body.sa .list{overflow:hidden}
+body.sa .item{padding:12px 16px;min-height:50px;position:relative}
+body.sa .item+.item::before,body.sa .rowx+.rowx .item::before{content:"";position:absolute;left:52px;right:0;top:0;height:.5px;background:var(--border)}
+body.sa .chk{width:22px;height:22px;border:1.6px solid var(--text-3)}
+body.sa .chk.done{background:var(--accent);border-color:var(--accent)}
+body.sa .ttl{font-size:16px;letter-spacing:-.015em}
+body.sa .meta .m{font-size:13px}
+body.sa .btn{border-radius:12px;background:color-mix(in srgb,var(--text) 7%,transparent);box-shadow:none;font-weight:600;font-size:15px;padding:9px 16px;color:var(--accent)}
+body.sa .btn:hover{background:color-mix(in srgb,var(--text) 11%,transparent)}
+body.sa .btn.pri{background:var(--accent);color:#fff;box-shadow:none}
+body.sa .btn.pri:hover{filter:brightness(1.08)}
+body.sa .btn.danger{color:var(--danger)}
+body.sa .btn.ai{background:linear-gradient(135deg,#007AFF,#AF52DE);color:#fff}
+body.sa .btn:disabled{opacity:.4}
+body.sa .tool{background:color-mix(in srgb,var(--text) 7%,transparent);color:var(--text);border-radius:999px;font-weight:500;padding:5px 12px}
+body.sa .pick .tool.on{background:var(--accent);color:#fff}
+body.sa .seg{background:color-mix(in srgb,var(--text) 8%,transparent);border-radius:9px;padding:2px}
+body.sa .seg button{border-radius:7px;font-weight:500;color:var(--text)}
+body.sa .seg button.on{background:var(--surface);box-shadow:0 3px 8px rgba(0,0,0,.12),0 3px 1px rgba(0,0,0,.04)}
+[data-theme=dark] body.sa .seg button.on{background:#636366}
+body.sa .fld,body.sa textarea.draft,body.sa .qcap{border:0;background:color-mix(in srgb,var(--text) 6%,transparent);border-radius:12px}
+body.sa .fld:focus,body.sa .qcap:focus{box-shadow:0 0 0 3px var(--accent-soft);outline:0}
+body.sa .cap{padding:14px 16px}
+body.sa .cap:focus-within{box-shadow:0 0 0 2px var(--accent),var(--e1)}
+body.sa .brief{background:var(--surface)}
+body.sa .stat b{font-family:var(--display);font-size:24px;font-weight:700}
+body.sa .drawer{background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:saturate(180%) blur(30px);-webkit-backdrop-filter:saturate(180%) blur(30px);border-left:.5px solid var(--border)}
+body.sa .toast{border-radius:14px;background:color-mix(in srgb,#1c1c1e 88%,transparent);color:#fff;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);font-weight:500}
+body.sa .toast button{color:#0A84FF;filter:none}
+body.sa .xchip{background:color-mix(in srgb,var(--text) 7%,transparent);padding:4px 10px;border-radius:999px;font-size:13px;display:inline-flex;align-items:center}
+body.sa .banner{border-radius:14px}
+body.sa .empty b{font-family:var(--display);font-size:20px}
+/* comptes */
+.acc{padding:12px 0;border-top:.5px solid var(--border)}
+.acc-h{display:flex;gap:12px;align-items:center}
+.acc-ic{width:36px;height:36px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;flex:none}
+.acc-t{flex:1;min-width:0;display:flex;flex-direction:column}.acc-t b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acc-t span{font-size:12.5px}.okc{color:var(--ok)}.warnc{color:var(--warn)}
+.acc-r{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0 48px}
+.chipb{padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:500;background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text-2);transition:all .15s}
+.chipb.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.cfgbox{margin-top:8px;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--text) 4%,transparent)}
+.cfgbox code{font-size:12px;word-break:break-all}
+body.sa .btn svg{flex:none}
+@media (max-width:719px){
+ body.sa .mtop{background:color-mix(in srgb,var(--bg) 80%,transparent);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:.5px solid var(--border)}
+ body.sa .bnav{background:color-mix(in srgb,var(--surface) 78%,transparent);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-top:.5px solid var(--border)}
+ body.sa .bnav button{font-size:10.5px;font-weight:500}
+ body.sa .bnav .plus{border-radius:50%;width:50px;height:50px;background:var(--accent);box-shadow:0 6px 18px rgba(0,122,255,.4)}
+ body.sa .hdr h1,body.sa .date-big{font-size:32px;line-height:38px}
+ body.sa .drawer{border-radius:14px 14px 0 0}
+ .acc-r{margin-left:0}
+}
+
+body.sa.noai .redo,body.sa.noai .pick:has([data-redo]),body.sa.noai .histo .mlight{display:none!important}
 body.sa.gw [data-nav=mails]{display:flex!important}
 .gacc{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
 .bkrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13.5px;border-bottom:1px solid var(--border)}.bkrow:last-child{border-bottom:0}
@@ -990,7 +1142,7 @@ V.settings=()=>{const a=items();
  <div class="card"><b>Apparence</b><div class="lbl2">Taille du texte</div><div class="pick">${[["s","Petit"],["m","Normal"],["l","Grand"],["xl","Très grand"]].map(([k,l])=>`<button class="tool ${(ST.settings.fs||"m")===k?"on":""}" data-fs="${k}">${l}</button>`).join("")}</div>
  <div class="lbl2">Couleur</div><div class="pick">${ACCENTS.map(([c,l])=>`<button class="sw ${(ST.settings.accent||"#3355E0")===c?"on":""}" style="background:${c}" data-accent="${c}" title="${l}" aria-label="${l}"></button>`).join("")}</div>
  <div class="lbl2">Barre du bas sur téléphone (si elle est coupée)</div><div class="pick">${[[0,"Auto"],[24,"+24"],[48,"+48"],[72,"+72"],[96,"+96"]].map(([v,l])=>`<button class="tool ${(+ST.settings.lift||0)===v?"on":""}" data-lift="${v}">${l}</button>`).join("")}</div><div class="sub" style="font-size:12px;margin-top:4px">Auto mesure la place cachée par l'app${U.liftAuto?" (ici : "+U.liftAuto+" px)":""}.</div></div>
- <div class="card"><b>Google Agenda</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 8px">Tes réunions dans Aujourd'hui et le Calendrier, en lecture seule. Rien n'est modifié dans ton agenda.</p><button class="btn ${ST.settings.calOn?"":"pri"}" data-act="${ST.settings.calOn?"caloff":"calon"}">${ST.settings.calOn?"Masquer mes réunions":"Afficher mes réunions"}</button></div>
+ <div class="card"><b>Réunions</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 8px">Tes réunions dans Aujourd'hui et le Calendrier, en lecture seule. Rien n'est modifié dans ton agenda.</p><button class="btn ${ST.settings.calOn?"":"pri"}" data-act="${ST.settings.calOn?"caloff":"calon"}">${ST.settings.calOn?"Masquer mes réunions":"Afficher mes réunions"}</button></div>
  <div class="card"><b>Données</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 10px">${a.length} éléments, ${spaces().length} espaces, ${people().length} personnes. Stockage : ${ST.mode==="db"?"Firebase, zone privée":"non sauvegardé"}.</p>
  <div class="frow"><button class="btn pri" data-act="dljson">⬇ Télécharger une sauvegarde</button><button class="btn" data-act="dlmd">⬇ Tout en Markdown</button><button class="btn" data-act="restorebk">↺ Restaurer un fichier</button><button class="btn" data-act="exportjson">Copier (JSON)</button><button class="btn" data-act="exportmd">Copier (Markdown)</button><button class="btn" data-nav="trash">Corbeille (${[...ST.items.values()].filter(i=>i.deletedAt).length})</button></div></div>
  <div class="card"><b>Syntaxe de capture</b><div style="font-size:14px;color:var(--text-2);margin-top:6px;line-height:26px"><code>t </code> tâche · <code>- </code> note · <code>o </code> événement · <code>d </code> décision · <code>!</code> urgent · <code>@nom</code> personne · <code>~nom</code> en attente de · <code>#espace</code> espace ou tag · <code>^demain ^vendredi ^25/11 ^+3j ^+2sem</code> échéance</div></div>
@@ -1174,7 +1326,7 @@ function search(q){
   if(t[0]==="#")return(i.space&&sp(i.space)&&norm(sp(i.space).name).includes(t.slice(1)))||(i.tags||[]).some(x=>norm(x).includes(t.slice(1)));
   return norm(i.title+" "+(i.body||"")+" "+(i.tags||[]).join(" ")).includes(t)})).sort((a,b)=>(open_(b)-open_(a))||new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt)).slice(0,50);
 }
-const CMDS=[["Nouvelle capture","cap","C"],["Aujourd'hui","nav:today","G T"],["Boîte","nav:inbox","G B"],["Trier la Boîte","nav:tri",""],["Toutes mes tâches","nav:tasks",""],["À venir","nav:upcoming","G V"],["En attente de","nav:waiting","G A"],["Carnet","nav:carnet","G C"],["Journal du jour","nav:journal",""],["Journal de décisions","nav:decisions",""],["Mode réunion","nav:meeting",""],["Demande au carnet","nav:ask",""],["Photo du cahier","nav:photo",""],["Mails à traiter","nav:mails",""],["Veille","nav:veille",""],["Revue hebdo","nav:review",""],["Import","nav:import",""],["Nouvel espace","newspace",""],["Nouvelle personne","newperson",""],["Modèle : Incident","tpl:Incident",""],["Modèle : Changement (G3 → pilote → déploiement)","tpl:Changement",""],["Modèle : Intervention","tpl:Intervention",""],["Modèle : Appel","tpl:Appel",""],["Calendrier","nav:cal",""],["Note du jour (journal)","daily",""],["Télécharger une sauvegarde","dljson",""],["Basculer le thème","theme",""],["Aide : raccourcis","help",""],["Demander une action à Kennach (trier, ranger, taguer…)","askact",""],["Veille : archives et demandes","veilleask",""],["Afficher mes réunions Google Agenda","nav:cal",""],["Réglages","nav:settings",""],["Corbeille","nav:trash",""],["Copier une sauvegarde JSON","exportjson",""]];
+const CMDS=[["Nouvelle capture","cap","C"],["Aujourd'hui","nav:today","G T"],["Boîte","nav:inbox","G B"],["Trier la Boîte","nav:tri",""],["Toutes mes tâches","nav:tasks",""],["À venir","nav:upcoming","G V"],["En attente de","nav:waiting","G A"],["Carnet","nav:carnet","G C"],["Journal du jour","nav:journal",""],["Journal de décisions","nav:decisions",""],["Mode réunion","nav:meeting",""],["Demande au carnet","nav:ask",""],["Photo du cahier","nav:photo",""],["Mails à traiter","nav:mails",""],["Veille","nav:veille",""],["Revue hebdo","nav:review",""],["Import","nav:import",""],["Nouvel espace","newspace",""],["Nouvelle personne","newperson",""],["Modèle : Incident","tpl:Incident",""],["Modèle : Changement (G3 → pilote → déploiement)","tpl:Changement",""],["Modèle : Intervention","tpl:Intervention",""],["Modèle : Appel","tpl:Appel",""],["Calendrier","nav:cal",""],["Note du jour (journal)","daily",""],["Télécharger une sauvegarde","dljson",""],["Basculer le thème","theme",""],["Aide : raccourcis","help",""],["Demander une action à Kennach (trier, ranger, taguer…)","askact",""],["Veille : archives et demandes","veilleask",""],["Afficher mes réunions Google ou Outlook","nav:cal",""],["Réglages","nav:settings",""],["Corbeille","nav:trash",""],["Copier une sauvegarde JSON","exportjson",""]];
 const TPL={Incident:"Impact :\nDébut :\nSymptôme :\nCause probable :\nActions :\n- \nRetour arrière :\nLeçon :",Changement:"Objectif :\nPourquoi :\n1. Test sur le G3 — résultat :\n2. Pilote (petit groupe) — résultat :\n3. Déploiement GPO/SYSVOL — date hors heures :\nTest de validation :\nRetour arrière :",Intervention:"Où :\nQui :\nFait :\nReste à faire :",Appel:"Avec :\nSujet :\nCe qui est dit :\nÀ faire :\n- "};
 let palSel=0,palItems=[];
 function openPal(){$("#pal").classList.add("on");$("#scrim").classList.add("on");const q=$("#palq");q.value="";palSel=0;palRender("");setTimeout(()=>q.focus(),30)}
@@ -1218,7 +1370,7 @@ function closeMeet(){
  const qs=L.filter(l=>/^\s*\?/.test(l)).map(l=>l.replace(/^\s*\?/,"").trim()).filter(Boolean);
  const mine=act.filter(a=>!a.waitingOn&&!a.newWait),theirs=act.filter(a=>a.waitingOn||a.newWait);
  const who=n=>n.waitingOn?pshort(n.waitingOn):n.newWait;
- const mail=`Bonjour,\n\nMerci pour la réunion d'aujourd'hui. Voici ce qu'on a retenu :\n${dec.map(d=>"- "+d).join("\n")||"- "}\n\n${theirs.length?`Actions de votre côté :\n${theirs.map(a=>"- "+a.title+(a.due?" ("+fmtDue(a.due).toLowerCase()+")":"")).join("\n")}\n\n`:""}${mine.length?`De mon côté :\n${mine.map(a=>"- "+a.title+(a.due?" ("+fmtDue(a.due).toLowerCase()+")":"")).join("\n")}\n\n`:""}${qs.length?`Point à clarifier :\n${qs.map(q=>"- "+q).join("\n")}\n\n`:""}Bonne journée,\nl'utilisateur`;
+ const mail=`Bonjour,\n\nMerci pour la réunion d'aujourd'hui. Voici ce qu'on a retenu :\n${dec.map(d=>"- "+d).join("\n")||"- "}\n\n${theirs.length?`Actions de votre côté :\n${theirs.map(a=>"- "+a.title+(a.due?" ("+fmtDue(a.due).toLowerCase()+")":"")).join("\n")}\n\n`:""}${mine.length?`De mon côté :\n${mine.map(a=>"- "+a.title+(a.due?" ("+fmtDue(a.due).toLowerCase()+")":"")).join("\n")}\n\n`:""}${qs.length?`Point à clarifier :\n${qs.map(q=>"- "+q).join("\n")}\n\n`:""}Bonne journée,\n${KNAME()}`;
  U.meet={title,dec,mine,theirs,qs,body:$("#mbody").value,space:$("#msp").value||null};
  $("#mres").innerHTML=`<div class="card" style="margin-top:16px"><b>Extrait de la réunion</b>
  <div class="grp">Décisions (${dec.length})</div>${dec.map(d=>`<div class="blk">${I.dec} ${esc(d)}</div>`).join("")||'<div class="sub">Aucune ligne « D: »</div>'}
@@ -1466,7 +1618,7 @@ function aiErr(e){const c=e&&e.code;
  if(c==="images_unavailable"||c==="image_rejected")return"Photo refusée (format ou taille). Essaie une autre photo, en JPEG ou PNG.";
  if(c==="session_expired")return"Reconnecte-toi.";
  return"Erreur IA ("+(c||"inconnue")+"). Réessaie.";}
-function mcpErr(e,srv){const c=e&&e.code;if(c==="needs_reauth")return"Connexion Google à renouveler : clique sur ↻ ou va dans Réglages › Comptes Google.";if(c==="not_configured")return"Google pas encore configuré : Réglages › Comptes Google.";if(c==="api_disabled")return"API Google non activée dans la console Google Cloud.";if(c==="consent_required")return"Accès Google refusé ou annulé.";
+function mcpErr(e,srv){const c=e&&e.code;if(c==="needs_reauth")return"Connexion à renouveler : clique sur ↻ ou Réglages › Comptes connectés.";if(c==="not_configured")return"Aucun compte mail : Réglages › Comptes connectés.";if(c==="api_disabled")return"API Google non activée dans la console Google Cloud.";if(c==="consent_required")return"Accès refusé ou annulé.";if(c==="admin_consent")return"Ton entreprise exige l’accord de l’administrateur pour cette app.";if(c==="not_found")return"Introuvable (supprimé ?).";
  if(c==="needs_reauth")return`Reconnecte ${srv} dans les Réglages.`;
  if(c==="server_not_connected")return`Ajoute ${srv} dans les Réglages.`;
  if(c==="not_in_manifest"||c==="approval_required"||c==="consent_required")return`Accès à ${srv} non autorisé pour Kennach. Clique à nouveau et accepte la demande.`;
@@ -1603,7 +1755,7 @@ function drawMail(){
  <div class="pick" style="margin-top:8px">${["Plus court","Plus formel","Réponse d'attente","Demander un délai","Simple, sans jargon"].map(x=>`<button class="tool" data-redo="${x}">${x}</button>`).join("")}${m.prevDrafts.length?`<button class="tool" data-act="undodraft">↶ Version d'avant</button>`:""}</div>
  <div style="margin-top:12px"><button class="btn" data-act="attach">📎 Joindre</button> ${m.files.map((f,k)=>`<span class="att">📄 ${esc(f.name)} (${Math.ceil(f.size/1024)} Ko) <button data-rmatt="${k}" style="margin-left:4px">✕</button></span>`).join("")}</div>
  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-act="gdraft" ${m.busy?"disabled":""}>Créer le brouillon Gmail</button><button class="btn" data-act="mail2task">+ Tâche</button></div>
- <div class="histo">Réponse à ${esc(last&&!last.sent?last.from:m.from)} · modèle léger · rien n'est envoyé : tu relis et tu envoies depuis Gmail.</div>`:`<button class="btn ai" data-act="mkdraft">${CAP.sample?I.spark+" Faire le brouillon":"✎ Écrire la réponse"}</button> <button class="btn" data-act="mail2task">+ Tâche</button>`}</div>`:""}</div>`;
+ <div class="histo">Réponse à ${esc(last&&!last.sent?last.from:m.from)} <span class="mlight">· modèle léger</span> · rien n'est envoyé : tu relis et tu envoies depuis Gmail.</div>`:`<button class="btn ai" data-act="mkdraft">${CAP.sample?I.spark+" Faire le brouillon":"✎ Écrire la réponse"}</button> <button class="btn" data-act="mail2task">+ Tâche</button>`}</div>`:""}</div>`;
  $("#drawer").classList.add("on");$("#scrim").classList.add("on");
  const d=$("#draft");if(d)d.addEventListener("input",()=>{U.mail.draft=d.value});
 }
@@ -1652,7 +1804,7 @@ function openShare(){const it=ST.items.get(U.sel);if(!it)return;U.flush&&U.flush
  <div class="sub" style="font-size:13px;color:var(--text-2);margin-bottom:10px">« ${esc(it.title)} »</div>
  <div class="lbl2">À qui ?</div><div class="pick"><button class="tool on" data-to="none">Sans destinataire</button>${az?`<button class="tool" data-to="${az.id}" ${az.email?"":"disabled title='Ajoute son e-mail dans sa fiche'"}>${esc(az.alias||az.name)}${az.email?"":" (e-mail manquant)"}</button>`:""}</div>
  <div class="lbl2">Objet</div><input class="fld" id="shsub" value="${esc(it.title)}">
- <div class="lbl2">Message</div><textarea class="draft" id="shtxt" style="min-height:180px">${esc(`Bonjour,\n\nPour info :\n\n${it.title}\n${it.body?"\n"+it.body+"\n":""}${it.due?"\nÉchéance : "+fmtDate(it.due)+"\n":""}\nl'utilisateur`)}</textarea>
+ <div class="lbl2">Message</div><textarea class="draft" id="shtxt" style="min-height:180px">${esc(`Bonjour,\n\nPour info :\n\n${it.title}\n${it.body?"\n"+it.body+"\n":""}${it.due?"\nÉchéance : "+fmtDate(it.due)+"\n":""}\n${KNAME()}`)}</textarea>
  <div style="margin-top:8px"><button class="btn ai" data-act="aishare">${I.spark} Rédiger avec l'IA</button></div>
  <div style="margin-top:14px"><button class="btn pri" data-act="sharego">Créer le brouillon Gmail</button></div>
  <div class="histo">Brouillon seulement : tu relis, tu choisis le destinataire si besoin, et tu envoies depuis Gmail.</div></div>`;
@@ -2002,7 +2154,7 @@ function helpSheet(){$("#drawer").innerHTML=`<div class="dh"><b>Raccourcis</b><b
  ${[["Ctrl/⌘ K","Palette : tout faire"],["C","Capturer"],["/","Chercher"],["G puis T / B / V / A / C / J","Aujourd'hui / Boîte / À venir / Attente / Carnet / Journal"],["Ctrl/⌘ S","Enregistrer la note"],["Ctrl/⌘ Entrée","Fermer la note"],["Ctrl/⌘ Z","Annuler la dernière action"],["Échap","Fermer"],["?","Cette aide"],["Clic droit / appui long","Actions rapides sur une ligne"]].map(([k,l])=>`<div><kbd>${k}</kbd><span>${l}</span></div>`).join("")}</div></div>`;
  $("#drawer").classList.add("on");$("#scrim").classList.add("on")}
 
-/* 9-14. Google Agenda */
+/* 9-14. Google / Outlook */
 const GCAL={by:{},busy:{},err:null};
 const monthKey=d=>d.getFullYear()+"-"+(d.getMonth()+1);
 const evTime=x=>{if(!x)return null;if(x.date)return new Date(x.date+"T00:00:00");const s=String(x.dateTime||"");return new Date(x.timeZone?s.replace(/(Z|[+-]\d\d:?\d\d)$/,""):s)};
@@ -2030,9 +2182,9 @@ function evNote(id){let ev=null;Object.values(GCAL.by).forEach(m=>m.ev.forEach(e
 function nextMeeting(){const now=new Date();const L=eventsOn(today0()).filter(e=>!e.allDay&&e.end>now);return L[0]||null}
 function meetLine(){if(!ST.settings.calOn)return"";const m=nextMeeting();if(!m)return"";const mins=Math.round((m.start-new Date())/60000);
  return `<p style="margin-top:6px;font-size:14px">📅 ${mins<=0?"En cours":"Prochaine réunion"} : <b>${hm(m.start)} ${esc(m.title)}</b>${mins>0?` <span class="sub">(dans ${mins<60?mins+" min":Math.floor(mins/60)+" h "+pad2(mins%60)})</span>`:""}</p>`}
-function todayMeetings(){if(!CAP.mcp)return"";if(!ST.settings.calOn)return `<div class="calcta"><span>📅 Voir tes réunions Google Agenda ici et dans le Calendrier</span><button class="btn" data-act="calon">Afficher</button></div>`;
+function todayMeetings(){if(!CAP.mcp)return"";if(!ST.settings.calOn)return `<div class="calcta"><span>📅 Voir tes réunions Google ou Outlook ici et dans le Calendrier</span><button class="btn" data-act="calon">Afficher</button></div>`;
  const k=monthKey(new Date());if(!GCAL.by[k]&&!GCAL.busy[k]&&!GCAL.err)setTimeout(()=>loadCal(new Date()),0);
- const L=eventsOn(today0());if(GCAL.err)return `<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ton compte Google pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} <button class="tool" data-act="calreload">Réessayer</button></div>`;
+ const L=eventsOn(today0());if(GCAL.err)return `<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ou reconnecte ton compte pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} <button class="tool" data-act="calreload">Réessayer</button></div>`;
  return `<div class="grp">Réunions aujourd'hui <span class="n">${L.length}</span>${GCAL.busy[k]?'<span class="sub" style="text-transform:none;letter-spacing:0">· chargement…</span>':""}</div>${L.length?`<div class="list evl">${L.map(e=>evRow(e)).join("")}</div>`:GCAL.busy[k]?"":`<div class="empty" style="padding:14px">Aucune réunion aujourd'hui.</div>`}`}
 
 /* 12-14. Calendrier v2 : mois / agenda, glisser une tâche sur un jour */
@@ -2041,9 +2193,9 @@ V.cal=()=>{const b=today0();b.setDate(1);b.setMonth(b.getMonth()+U.calM);const y
  if(ST.settings.calOn&&CAP.mcp){const k=monthKey(b);if(!GCAL.by[k]&&!GCAL.busy[k])setTimeout(()=>loadCal(new Date(b)),0)}
  const k=monthKey(b);const busy=GCAL.busy[k];
  const its=items().filter(i=>i.due&&!i.deletedAt);const byD=d=>its.filter(i=>new Date(i.due).toDateString()===d.toDateString()).sort((a,c)=>new Date(a.due)-new Date(c.due));
- const head=`<div class="hdr"><div><h1>${cap1(MOIS[mo])} ${y}</h1><div class="sub">${ST.settings.calOn?`Tâches + réunions Google Agenda${busy?" · chargement…":GCAL.by[k]?" · à jour "+hm(new Date(GCAL.by[k].at)):""}`:"Tout ce qui a une date."}</div></div><div class="act"><div class="seg"><button class="${U.calV==="month"?"on":""}" data-calv="month">Mois</button><button class="${U.calV==="agenda"?"on":""}" data-calv="agenda">Agenda</button></div><button class="btn" data-calm="-1" aria-label="Mois précédent">←</button><button class="btn" data-calm="0">Auj.</button><button class="btn" data-calm="1" aria-label="Mois suivant">→</button>${ST.settings.calOn?`<button class="btn" data-act="calreload" title="Recharger l'agenda">↻</button>`:""}</div></div>
- ${CAP.mcp&&!ST.settings.calOn?`<div class="calcta"><span>📅 Ajouter tes réunions Google Agenda, en lecture seule</span><button class="btn pri" data-act="calon">Afficher mes réunions</button></div>`:""}
- ${GCAL.err?`<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ton compte Google pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} Vérifie la connexion à ton compte Google. <button class="tool" data-act="calreload">Réessayer</button></div>`:""}`;
+ const head=`<div class="hdr"><div><h1>${cap1(MOIS[mo])} ${y}</h1><div class="sub">${ST.settings.calOn?`Tâches + réunions Google ou Outlook${busy?" · chargement…":GCAL.by[k]?" · à jour "+hm(new Date(GCAL.by[k].at)):""}`:"Tout ce qui a une date."}</div></div><div class="act"><div class="seg"><button class="${U.calV==="month"?"on":""}" data-calv="month">Mois</button><button class="${U.calV==="agenda"?"on":""}" data-calv="agenda">Agenda</button></div><button class="btn" data-calm="-1" aria-label="Mois précédent">←</button><button class="btn" data-calm="0">Auj.</button><button class="btn" data-calm="1" aria-label="Mois suivant">→</button>${ST.settings.calOn?`<button class="btn" data-act="calreload" title="Recharger l'agenda">↻</button>`:""}</div></div>
+ ${CAP.mcp&&!ST.settings.calOn?`<div class="calcta"><span>📅 Ajouter tes réunions Google ou Outlook, en lecture seule</span><button class="btn pri" data-act="calon">Afficher mes réunions</button></div>`:""}
+ ${GCAL.err?`<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ou reconnecte ton compte pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} Vérifie la connexion à ton compte Google. <button class="tool" data-act="calreload">Réessayer</button></div>`:""}`;
  if(U.calV==="agenda"){const start=U.calM?new Date(y,mo,1):today0();const end=new Date(start);end.setDate(end.getDate()+(U.calM?new Date(y,mo+1,0).getDate():21));const out=[];
   for(let d=new Date(start);d<end;d.setDate(d.getDate()+1)){const dd=new Date(d);const ev=eventsOn(dd),ti=byD(dd);if(!ev.length&&!ti.length&&dd.toDateString()!==new Date().toDateString())continue;
    out.push(`<div class="grp ${dd.toDateString()===new Date().toDateString()?"tod":""}">${cap1(JOURS[dd.getDay()])} ${dd.getDate()} ${MOIS[dd.getMonth()]} <button class="tool" style="margin-left:auto;text-transform:none;letter-spacing:0" data-addday="${iso(dd)}">+ Ajouter</button></div>${ev.length?`<div class="list evl" style="margin-bottom:6px">${ev.map(e=>evRow(e)).join("")}</div>`:""}${listHTML(ti)||(ev.length?"":'<div class="sub" style="padding:4px 2px 8px">Rien de prévu.</div>')}`)}
@@ -2211,64 +2363,104 @@ function planHTML(){const P=U.plan;if(!P)return"";if(P.busy)return `<div class="
  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-act="planok" ${on?"":"disabled"}>Appliquer (${on})</button><button class="btn" data-act="planall">Tout cocher</button><button class="btn" data-act="planno">Annuler</button></div><div class="histo">Rien n'est fait tant que tu ne cliques pas sur « Appliquer ». Tu peux tout annuler juste après.</div>`:'<div class="sub">Aucune action proposée.</div>'}</div>`}
 
 
-/* ================= Kennach autonome : comptes Google, sauvegardes, hors connexion ================= */
+/* ================= Kennach autonome : comptes (Google + Microsoft), sauvegardes, hors connexion ================= */
 const KG_DEFAULT="__KG_CLIENT__";
-window.KG_CLIENT=KG_DEFAULT.indexOf("__")===0?"":KG_DEFAULT;
-function kgSync(){if(ST.settings.gClientId)window.KG_CLIENT=ST.settings.gClientId;document.body.classList.toggle("gw",!!(window.KG&&KG.connected("work")))}
-window.addEventListener("kg-change",()=>{kgSync();U.bkLoaded=false;schedule()});
+const PROV={google:{n:"Google",ic:`<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>`,mail:"Gmail + Agenda",bk:"Google Drive"},
+ ms:{n:"Microsoft",ic:`<svg width="18" height="18" viewBox="0 0 23 23"><path fill="#f35325" d="M1 1h10v10H1z"/><path fill="#81bc06" d="M12 1h10v10H12z"/><path fill="#05a6f0" d="M1 12h10v10H1z"/><path fill="#ffba08" d="M12 12h10v10H12z"/></svg>`,mail:"Outlook + Agenda",bk:"OneDrive"}};
+const accounts=()=>Array.isArray(ST.settings.accounts)?ST.settings.accounts:[];
+function kgSync(){window.KCFG={google:ST.settings.gClientId||(KG_DEFAULT.indexOf("__")===0?"":KG_DEFAULT),ms:ST.settings.msClientId||""};window.KACCS=accounts();window.KMAILACC=U.mailAcc||null;
+ document.body.classList.toggle("noai",!CAP.sample);document.body.classList.toggle("gw",accounts().some(a=>a.roles&&a.roles.mail))}
+function saveAccounts(L){putSettings({accounts:JSON.parse(JSON.stringify(L))});kgSync()}
+/* reprise des connexions Google déjà faites (version précédente) */
+function migrateAccounts(){if(ST.settings.accounts)return;const g=k=>{try{return JSON.parse(localStorage.getItem("kg_acct_"+k)||"null")}catch(e){return null}};const w=g("work"),b=g("backup");const L=[];
+ if(w&&w.email)L.push({id:"g_"+Date.now().toString(36),prov:"google",email:w.email,roles:{mail:true,backup:false}});
+ if(b&&b.email){const same=L.find(a=>a.email===b.email);if(same)same.roles.backup=true;else L.push({id:"g_"+(Date.now()+1).toString(36),prov:"google",email:b.email,roles:{mail:false,backup:true}})}
+ if(L.length)saveAccounts(L)}
 /* --- compression --- */
 async function gz64(txt){if(!window.CompressionStream)return"raw:"+txt;const cs=new Blob([txt]).stream().pipeThrough(new CompressionStream("gzip"));const buf=new Uint8Array(await new Response(cs).arrayBuffer());let b="";for(let i=0;i<buf.length;i+=0x8000)b+=String.fromCharCode.apply(null,buf.subarray(i,i+0x8000));return btoa(b)}
 async function ungz64(s){if(String(s).startsWith("raw:"))return s.slice(4);const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const ds=new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"));return await new Response(ds).text()}
 /* --- sauvegardes --- */
-U.bk={fs:[],dr:[],err:null};U.bkLoaded=false;
+U.bk={fs:[],cloud:{},err:{}};U.bkLoaded=false;
 async function snapFirebase(force){if(ST.mode!=="db"||!ST.db)return false;const d=ymd(new Date());if(!force&&ST.settings.lastSnap===d)return false;
- const txt=JSON.stringify(backupData());const gz=await gz64(txt);if(gz.length>950000){toast("Sauvegarde Firebase trop grosse : utilise Drive ou le téléchargement.",null,"danger");return false}
+ const txt=JSON.stringify(backupData());const gz=await gz64(txt);if(gz.length>950000){toast("Sauvegarde Firebase trop grosse : utilise le cloud ou le téléchargement.",null,"danger");return false}
  await ST.db.doc("backups/"+d).set({at:nowIso(),n:items().length,size:txt.length,gz});putSettings({lastSnap:d});
  try{const s=await ST.db.collection("backups").get();const ids=s.docs.map(x=>x.id).sort().reverse();ids.slice(14).forEach(id=>ST.db.doc("backups/"+id).delete())}catch(e){}
  return true}
-async function snapDrive(force){if(!window.KDrive||!KG.connected("backup"))return false;if(!force&&!KG.valid("backup"))return false;
- const last=ST.settings.lastDrive?Date.now()-new Date(ST.settings.lastDrive):1e12;if(!force&&last<20*3600e3)return false;
- const n=new Date();await KDrive.save(`kennach-${ymd(n)}-${pad2(n.getHours())}${pad2(n.getMinutes())}.json`,JSON.stringify(backupData(),null,1));putSettings({lastDrive:nowIso(),lastBackup:nowIso()});
- try{const L=await KDrive.list();L.slice(30).forEach(f=>KDrive.del(f.id))}catch(e){}
- return true}
-async function autoBackup(){try{await snapFirebase(false)}catch(e){}try{await snapDrive(false)}catch(e){}}
+async function snapCloud(acc,force){if(!acc.roles||!acc.roles.backup)return false;if(!force&&!KP.valid(acc))return false;const last=(ST.settings.lastCloud||{})[acc.id];
+ if(!force&&last&&Date.now()-new Date(last)<20*3600e3)return false;const n=new Date();
+ await KP.backup.save(acc,`kennach-${ymd(n)}-${pad2(n.getHours())}${pad2(n.getMinutes())}.json`,JSON.stringify(backupData(),null,1));
+ putSettings({lastCloud:{...(ST.settings.lastCloud||{}),[acc.id]:nowIso()},lastBackup:nowIso()});
+ try{const L=await KP.backup.list(acc);L.slice(30).forEach(f=>KP.backup.del(acc,f.id))}catch(e){}return true}
+async function autoBackup(){try{await snapFirebase(false)}catch(e){}for(const a of accounts()){try{await snapCloud(a,false)}catch(e){}}}
 async function backupNow(){U.bk.busy=true;render();const out=[];
  try{if(await snapFirebase(true))out.push("Firebase")}catch(e){out.push("Firebase ✕")}
- if(window.KG&&KG.connected("backup")){try{await snapDrive(true);out.push("Drive")}catch(e){out.push("Drive ✕ ("+(e.code==="needs_reauth"?"reconnecte Drive":e.code||"erreur")+")")}}
+ for(const a of accounts().filter(a=>a.roles&&a.roles.backup)){try{await snapCloud(a,true);out.push(PROV[a.prov].bk)}catch(e){out.push(PROV[a.prov].bk+" ✕ ("+(e.code==="needs_reauth"?"reconnecte":e.code||"erreur")+")")}}
  U.bk.busy=false;U.bkLoaded=false;render();toast("Sauvegarde : "+(out.join(" + ")||"rien"),null,out.some(x=>x.includes("✕"))?"danger":"",6000)}
-async function loadBk(){U.bkLoaded=true;U.bk.err=null;
+async function loadBk(){U.bkLoaded=true;U.bk.err={};
  try{const s=await ST.db.collection("backups").get();U.bk.fs=s.docs.map(d=>({id:d.id,...d.data(),gz:undefined})).sort((a,b)=>b.id.localeCompare(a.id))}catch(e){U.bk.fs=[]}
- U.bk.dr=[];if(window.KG&&KG.valid("backup")){try{U.bk.dr=await KDrive.list()}catch(e){U.bk.err=e.code||"erreur"}}schedule()}
-async function restoreFrom(kind,id){if(!confirm("Restaurer cette sauvegarde ?\nKennach ajoute ce qui manque et remet les éléments plus anciens que la sauvegarde. Les notes plus récentes ne sont pas écrasées."))return;
- try{let txt;if(kind==="fs"){const d=await ST.db.doc("backups/"+id).get();txt=await ungz64(d.data().gz)}else txt=await KDrive.get(id);await restoreFile(new File([txt],"sauvegarde.json"))}catch(e){toast("Restauration impossible ("+(e.code||"erreur")+").",null,"danger")}}
+ U.bk.cloud={};for(const a of accounts().filter(a=>a.roles&&a.roles.backup&&KP.valid(a))){try{U.bk.cloud[a.id]=await KP.backup.list(a)}catch(e){U.bk.err[a.id]=e.code||"erreur"}}schedule()}
+async function restoreFrom(kind,id,accId){if(!confirm("Restaurer cette sauvegarde ?\nKennach ajoute ce qui manque et remet les éléments plus anciens que la sauvegarde. Les notes plus récentes ne sont pas écrasées."))return;
+ try{let txt;if(kind==="fs"){const d=await ST.db.doc("backups/"+id).get();txt=await ungz64(d.data().gz)}else{const a=accounts().find(x=>x.id===accId);txt=await KP.backup.get(a,id)}await restoreFile(new File([txt],"sauvegarde.json"))}catch(e){toast("Restauration impossible ("+(e.code||"erreur")+").",null,"danger")}}
 const fmtSize=b=>b>1e6?(b/1e6).toFixed(1)+" Mo":Math.max(1,Math.round(b/1e3))+" Ko";
-function saCards(){if(!U.bkLoaded&&ST.mode==="db")setTimeout(loadBk,0);
- const row=(k,l,d)=>{const a=window.KG&&KG.account(k);return `<div class="gacc"><div style="flex:1;min-width:0"><b>${l}</b><div class="sub" style="font-size:13px">${a?esc(a.email)+(KG.valid(k)?" · connecté":" · reconnexion au prochain clic"):d}</div></div>${a?`<button class="btn" data-act="gdis" data-k="${k}">Déconnecter</button>`:`<button class="btn pri" data-act="gcon" data-k="${k}" ${KG.configured()?"":"disabled"}>Connecter</button>`}</div>`};
- const lastFs=ST.settings.lastSnap?fmtDate(ST.settings.lastSnap+"T12:00:00"):"jamais",lastDr=ST.settings.lastDrive?fmtDate(ST.settings.lastDrive)+" "+hm(new Date(ST.settings.lastDrive)):"jamais";
- return `<div class="card"><b>Comptes Google</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 6px">Connexion directe à Google, sans intermédiaire. Elle dure 1 h ; ensuite, un clic suffit pour la renouveler.</p>
- ${row("work","Travail : Gmail + Agenda","Ton compte pro : mails à traiter, brouillons, réunions.")}${row("backup","Sauvegarde : Google Drive","Copie de tes notes dans le dossier « Kennach - Sauvegardes ».")}
- ${KG.configured()?"":`<div class="lbl2">Identifiant client Google (se termine par .apps.googleusercontent.com)</div><div class="frow"><input class="fld" id="gcid" style="flex:1" placeholder="xxxx.apps.googleusercontent.com"><button class="btn" data-act="gcidsave">Enregistrer</button></div>`}</div>
- <div class="card"><b>Sauvegardes</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 10px">Automatique chaque jour : une copie dans Firebase (14 jours gardés)${KG.connected("backup")?" et une sur Drive (30 gardées)":""}. Dernière Firebase : <b>${lastFs}</b> · Drive : <b>${lastDr}</b>.</p>
- <div class="frow"><button class="btn pri" data-act="bknow" ${U.bk.busy?"disabled":""}>${U.bk.busy?"Sauvegarde…":"Sauvegarder maintenant"}</button>${KG.connected("backup")&&!KG.valid("backup")?`<button class="btn" data-act="gcon" data-k="backup">Reconnecter Drive</button>`:""}</div>
- ${U.bk.fs.length?`<div class="lbl2">Dans Firebase</div><div class="list">${U.bk.fs.map(b=>`<div class="bkrow"><span>${fmtDate(b.id+"T12:00:00")} · ${b.n||"?"} éléments · ${fmtSize(b.size||0)}</span><button class="tool" data-act="rfs" data-id="${esc(b.id)}">Restaurer</button></div>`).join("")}</div>`:""}
- ${U.bk.dr.length?`<div class="lbl2">Sur Drive</div><div class="list">${U.bk.dr.slice(0,15).map(f=>`<div class="bkrow"><span>${esc(f.name)} · ${fmtSize(+f.size||0)}</span><button class="tool" data-act="rdr" data-id="${esc(f.id)}">Restaurer</button></div>`).join("")}</div>`:""}
- ${U.bk.err?`<div class="sub" style="color:var(--danger);font-size:13px;margin-top:6px">Drive : ${esc(U.bk.err)}</div>`:""}</div>`}
+/* --- connexion d'un compte --- */
+async function addAccount(prov){const a={id:(prov==="ms"?"m_":"g_")+Date.now().toString(36),prov,email:"",roles:{mail:true,backup:false}};
+ window.KACCS=[...accounts(),a];try{await KP.connect(a);if(accounts().some(x=>x.prov===prov&&x.email&&x.email===a.email)){toast("Ce compte est déjà connecté.");KP.forget(a);return kgSync()}
+  saveAccounts([...accounts(),a]);if(!ST.settings.calOn)putSettings({calOn:true});GCAL.by={};GCAL.err=null;U.mails=null;toast(PROV[prov].n+" connecté : "+a.email)}
+ catch(e){kgSync();toast(accErr(e),null,"danger",8000)}}
+function accErr(e){const c=e&&e.code;if(c==="not_configured")return"Ajoute d'abord l'identifiant de l'app (Réglages › Identifiants techniques).";if(c==="consent_required")return"Connexion annulée.";if(c==="popup_blocked")return"Fenêtre bloquée par le navigateur : autorise les fenêtres pour Kennach.";
+ if(c==="admin_consent")return"Ton entreprise demande l'accord de l'administrateur pour cette app. Détail : "+(e.message||"");return"Connexion impossible ("+(e.message||c||"erreur")+")."}
+async function toggleRole(id,role){const L=accounts().map(a=>({...a,roles:{...a.roles}}));const a=L.find(x=>x.id===id);if(!a)return;a.roles[role]=!a.roles[role];
+ window.KACCS=L;try{await KP.connect(a);saveAccounts(L);GCAL.by={};U.mails=null;U.bkLoaded=false;toast(a.roles[role]?(role==="mail"?PROV[a.prov].mail:PROV[a.prov].bk)+" activé":"Désactivé");if(role==="backup"&&a.roles.backup)snapCloud(a,true).then(ok=>ok&&toast("Première sauvegarde "+PROV[a.prov].bk+" faite ✓")).catch(()=>{})}
+ catch(e){kgSync();toast(accErr(e),null,"danger",8000)}}
+/* --- connexion à Kennach avec Microsoft --- */
+function linkedProviders(){const u=window.KUSER;return u&&u.providerData?u.providerData.map(p=>p.providerId):[]}
+async function linkMicrosoft(){try{const p=new firebase.auth.OAuthProvider("microsoft.com");p.setCustomParameters({prompt:"select_account"});await firebase.auth().currentUser.linkWithPopup(p);window.KUSER=firebase.auth().currentUser;toast("Compte Microsoft lié : tu peux ouvrir Kennach avec Microsoft.");render()}
+ catch(e){const c=e&&e.code;toast(c==="auth/operation-not-allowed"?"Active d'abord Microsoft dans Firebase › Authentication.":c==="auth/credential-already-in-use"?"Ce compte Microsoft est déjà utilisé par un autre profil Kennach.":c==="auth/popup-closed-by-user"?"Annulé.":"Liaison impossible ("+(c||"erreur")+").",null,"danger",8000)}}
+/* --- cartes Réglages --- */
+function saCards(){if(!U.bkLoaded&&ST.mode==="db")setTimeout(loadBk,0);const L=accounts();const cf=window.KCFG||{};
+ const row=a=>{const P=PROV[a.prov],ok=KP.valid(a);return `<div class="acc"><div class="acc-h"><span class="acc-ic">${P.ic}</span><div class="acc-t"><b>${esc(a.email||P.n)}</b><span class="${ok?"okc":"warnc"}">${ok?"● connecté":"○ à reconnecter au prochain clic"}</span></div>${ok?"":`<button class="btn" data-act="acon" data-id="${a.id}">Reconnecter</button>`}<button class="tool" data-act="adel" data-id="${a.id}" title="Retirer ce compte">Retirer</button></div>
+  <div class="acc-r"><button class="chipb ${a.roles.mail?"on":""}" data-act="arole" data-id="${a.id}" data-role="mail">✉︎ ${P.mail}</button><button class="chipb ${a.roles.backup?"on":""}" data-act="arole" data-id="${a.id}" data-role="backup">☁︎ Sauvegarde ${P.bk}</button></div></div>`};
+ const lastFs=ST.settings.lastSnap?fmtDate(ST.settings.lastSnap+"T12:00:00"):"jamais";const lc=ST.settings.lastCloud||{};
+ const linked=linkedProviders();
+ return `<div class="card"><b>Comptes connectés</b><p class="cardsub">Google et Microsoft, pro ou perso, autant que tu veux. Pour chaque compte, choisis s'il sert aux mails et à l'agenda, à la sauvegarde, ou aux deux.</p>
+ ${L.map(row).join("")||'<div class="sub" style="padding:8px 0">Aucun compte pour l’instant.</div>'}
+ <div class="frow" style="margin-top:12px"><button class="btn pri" data-act="aadd" data-prov="google" ${cf.google?"":"disabled"}>${PROV.google.ic} Ajouter Google</button><button class="btn pri" data-act="aadd" data-prov="ms" ${cf.ms?"":"disabled"}>${PROV.ms.ic} Ajouter Microsoft</button></div>
+ <p class="cardsub" style="margin-top:10px">Google : reconnexion d'un clic après 1 h. Microsoft : reste connecté 24 h.</p>
+ <button class="tool" data-act="cfgt" style="margin-top:6px">${U.cfgOpen?"▾":"▸"} Identifiants techniques</button>${U.cfgOpen||!cf.google||!cf.ms?`<div class="cfgbox"><div class="lbl2">ID client Google (…apps.googleusercontent.com)</div><div class="frow"><input class="fld" id="gcid" style="flex:1" value="${esc(ST.settings.gClientId||"")}" placeholder="xxxx.apps.googleusercontent.com"><button class="btn" data-act="gcidsave">Enregistrer</button></div>
+ <div class="lbl2">ID d'application Microsoft (Entra, 8-4-4-4-12)</div><div class="frow"><input class="fld" id="mcid" style="flex:1" value="${esc(ST.settings.msClientId||"")}" placeholder="00000000-0000-0000-0000-000000000000"><button class="btn" data-act="mcidsave">Enregistrer</button></div>
+ <div class="sub" style="font-size:12px;margin-top:6px">Adresse de retour Microsoft à déclarer (Application monopage) : <code>${esc(KP.redirectUri())}</code></div></div>`:""}</div>
+ <div class="card"><b>Ouvrir Kennach avec…</b><p class="cardsub">Le même carnet, quel que soit le compte utilisé pour te connecter.</p>
+ <div class="frow"><span class="xchip">${PROV.google.ic}&nbsp;Google ${linked.includes("google.com")?"✓":""}</span><span class="xchip">${PROV.ms.ic}&nbsp;Microsoft ${linked.includes("microsoft.com")?"✓":""}</span>${linked.includes("microsoft.com")?"":`<button class="btn" data-act="mslink">Lier un compte Microsoft</button>`}</div></div>
+ <div class="card"><b>Sauvegardes</b><p class="cardsub">Automatique chaque jour : Firebase (14 jours gardés) et chaque compte « Sauvegarde » (30 gardées). Dernière Firebase : <b>${lastFs}</b>${L.filter(a=>a.roles.backup).map(a=>` · ${PROV[a.prov].bk} : <b>${lc[a.id]?fmtDate(lc[a.id])+" "+hm(new Date(lc[a.id])):"jamais"}</b>`).join("")}.</p>
+ <div class="frow"><button class="btn pri" data-act="bknow" ${U.bk.busy?"disabled":""}>${U.bk.busy?"Sauvegarde…":"Sauvegarder maintenant"}</button></div>
+ ${U.bk.fs.length?`<div class="lbl2">Firebase</div><div class="list">${U.bk.fs.map(b=>`<div class="bkrow"><span>${fmtDate(b.id+"T12:00:00")} · ${b.n||"?"} éléments · ${fmtSize(b.size||0)}</span><button class="tool" data-act="rfs" data-id="${esc(b.id)}">Restaurer</button></div>`).join("")}</div>`:""}
+ ${L.filter(a=>a.roles.backup).map(a=>{const F=U.bk.cloud[a.id]||[];return F.length?`<div class="lbl2">${PROV[a.prov].bk} · ${esc(a.email)}</div><div class="list">${F.slice(0,12).map(f=>`<div class="bkrow"><span>${esc(f.name)} · ${fmtSize(f.size)}</span><button class="tool" data-act="rcl" data-acc="${a.id}" data-id="${esc(f.id)}">Restaurer</button></div>`).join("")}</div>`:U.bk.err[a.id]?`<div class="sub" style="color:var(--danger);font-size:13px;margin-top:6px">${PROV[a.prov].bk} : ${esc(U.bk.err[a.id])}</div>`:""}).join("")}</div>`}
 {const _vs=V.settings;V.settings=()=>_vs().replace('<div class="card"><b>Données</b>',saCards()+'<div class="card"><b>Données</b>')}
-document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-act]");if(!t)return;const a=t.dataset.act,k=t.dataset.k,id=t.dataset.id;
- if(a==="gcon"){try{await KG.connect(k);toast(k==="work"?"Gmail et Agenda connectés":"Drive connecté");if(k==="work"&&!ST.settings.calOn)putSettings({calOn:true});if(k==="backup")snapDrive(false).then(ok=>{if(ok)toast("Première sauvegarde Drive faite ✓")}).catch(()=>{})}catch(x){toast(x.code==="consent_required"?"Connexion annulée.":x.code==="not_configured"?"Ajoute d'abord l'identifiant client Google.":"Connexion Google impossible ("+(x.message||x.code)+").",null,"danger",7000)}U.bkLoaded=false;kgSync();render();return}
- if(a==="gdis"){if(confirm("Déconnecter ce compte Google de Kennach ?")){KG.disconnect(k);toast("Déconnecté")}return}
- if(a==="gcidsave"){const v=($("#gcid")||{}).value||"";if(!/\.apps\.googleusercontent\.com$/.test(v.trim()))return toast("Identifiant invalide : il doit finir par .apps.googleusercontent.com");putSettings({gClientId:v.trim()});window.KG_CLIENT=v.trim();toast("Identifiant enregistré");return}
+/* --- choix du compte dans Mails --- */
+{const _vm=V.mails;V.mails=()=>{const L=accounts().filter(a=>a.roles&&a.roles.mail);let h=_vm();if(L.length>1){const cur=(KP.mailAcc()||{}).id;h=h.replace('<div class="act">',`<div class="act"><div class="seg">${L.map(a=>`<button class="${a.id===cur?"on":""}" data-act="macc" data-id="${a.id}" title="${esc(a.email)}">${PROV[a.prov].ic}&nbsp;${esc((a.email||"").split("@")[0])}</button>`).join("")}</div>`)}
+ if(!L.length)h=h.replace(/<div class="act">/,'<div class="act"><button class="btn pri" data-nav="settings">Connecter un compte</button>');return h}}
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-act]");if(!t)return;const a=t.dataset.act,id=t.dataset.id;
+ if(a==="calon"&&!accounts().some(x=>x.roles&&x.roles.mail)){toast("Connecte d’abord un compte Google ou Microsoft.");return nav("settings")}
+ if(a==="aadd")return addAccount(t.dataset.prov);
+ if(a==="acon"){const x=accounts().find(z=>z.id===id);if(!x)return;try{await KP.connect(x);toast("Reconnecté");U.bkLoaded=false;GCAL.err=null;render()}catch(er){toast(accErr(er),null,"danger",8000)}return}
+ if(a==="adel"){const x=accounts().find(z=>z.id===id);if(x&&confirm("Retirer "+(x.email||"ce compte")+" de Kennach ? (rien n'est supprimé chez "+PROV[x.prov].n+")")){KP.forget(x);saveAccounts(accounts().filter(z=>z.id!==id));GCAL.by={};U.mails=null;toast("Compte retiré")}return}
+ if(a==="arole")return toggleRole(id,t.dataset.role);
+ if(a==="cfgt"){U.cfgOpen=!U.cfgOpen;return render()}
+ if(a==="gcidsave"){const v=($("#gcid")||{}).value||"";if(!/\.apps\.googleusercontent\.com$/.test(v.trim()))return toast("ID Google invalide : il finit par .apps.googleusercontent.com");putSettings({gClientId:v.trim()});kgSync();return toast("ID Google enregistré")}
+ if(a==="mcidsave"){const v=(($("#mcid")||{}).value||"").trim();if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v))return toast("ID Microsoft invalide : format 8-4-4-4-12.");putSettings({msClientId:v});kgSync();return toast("ID Microsoft enregistré")}
+ if(a==="mslink")return linkMicrosoft();
+ if(a==="macc"){U.mailAcc=id;U.mails=null;U.mail=null;kgSync();return render()}
  if(a==="bknow")return backupNow();
  if(a==="rfs")return restoreFrom("fs",id);
- if(a==="rdr")return restoreFrom("dr",id);
+ if(a==="rcl")return restoreFrom("cl",id,t.dataset.acc);
 });
 /* --- hors connexion --- */
 {const _ss=setSync;setSync=function(){_ss();if(!navigator.onLine){const t=$("#synctxt");if(t)t.textContent="Hors connexion · gardé sur l'appareil";[$("#syncdot"),$("#syncdot2")].forEach(d=>d&&(d.className="sync wait"))}}}
 window.addEventListener("online",()=>{setSync();toast("De retour en ligne : synchronisation…")});window.addEventListener("offline",()=>{setSync();toast("Hors connexion : tes notes restent enregistrées sur l'appareil.")});
 /* --- démarrage --- */
-{const _al=afterLoad;afterLoad=function(){_al();kgSync();setTimeout(autoBackup,15000);setInterval(autoBackup,3*3600e3);
+{const _al=afterLoad;afterLoad=function(){_al();migrateAccounts();kgSync();setTimeout(autoBackup,15000);setInterval(autoBackup,3*3600e3);
  if(/iPhone|iPad/.test(navigator.userAgent)&&!navigator.standalone&&!ST.settings.iosHint){toast("Astuce : Partager › « Sur l'écran d'accueil » pour installer Kennach.",null,"",8000);putSettings({iosHint:true})}}}
-{const _r=render;render=function(){if(ST.settings&&ST.settings.gClientId)window.KG_CLIENT=ST.settings.gClientId;_r()}}
+{const _r=render;render=function(){if(ST.settings)kgSync();_r()}}
 
 document.body.classList.add("sa");
 boot();
