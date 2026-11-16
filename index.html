@@ -13,6 +13,93 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script>
+
+/* Kennach autonome : Gmail, Agenda et Drive en direct avec Google (sans serveur) */
+(function(){
+ var S={work:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly","email"],
+        backup:["https://www.googleapis.com/auth/drive.file","email"]};
+ var LS=function(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem("kg_"+k)||"null");if(v===null)localStorage.removeItem("kg_"+k);else localStorage.setItem("kg_"+k,JSON.stringify(v))}catch(e){return null}};
+ var gisP=null;function gis(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();if(gisP)return gisP;
+  gisP=new Promise(function(res,rej){var s=document.createElement("script");s.src="https://accounts.google.com/gsi/client";s.async=true;s.onload=function(){res()};s.onerror=function(){gisP=null;rej({code:"unavailable",message:"Google injoignable"})};document.head.appendChild(s)});return gisP}
+ function clientId(){return window.KG_CLIENT||""}
+ function acct(kind){return LS("acct_"+kind)}
+ function tokOk(kind){var t=LS("tok_"+kind);return t&&t.exp>Date.now()+60000?t.at:null}
+ function active(){try{return !!(navigator.userActivation&&navigator.userActivation.isActive)}catch(e){return false}}
+ function token(kind,force){var t=tokOk(kind);if(t&&!force)return Promise.resolve(t);
+  if(!clientId())return Promise.reject({code:"not_configured",message:"Google pas encore configuré"});
+  if(!force&&!active())return Promise.reject({code:"needs_reauth",message:"Connexion Google à renouveler"});
+  return gis().then(function(){return new Promise(function(res,rej){var a=acct(kind);
+   var c=google.accounts.oauth2.initTokenClient({client_id:clientId(),scope:S[kind].join(" "),hint:a&&a.email||undefined,prompt:a?"":"select_account consent",
+    callback:function(r){if(r.error)return rej({code:r.error==="access_denied"?"consent_required":"needs_reauth",message:r.error_description||r.error});
+     LS("tok_"+kind,{at:r.access_token,exp:Date.now()+((+r.expires_in||3600)*1000)});
+     fetch("https://www.googleapis.com/oauth2/v3/userinfo",{headers:{Authorization:"Bearer "+r.access_token}}).then(function(x){return x.json()}).then(function(u){if(u&&u.email)LS("acct_"+kind,{email:u.email});res(r.access_token);window.dispatchEvent(new Event("kg-change"))}).catch(function(){res(r.access_token)})},
+    error_callback:function(e){rej({code:e&&e.type==="popup_closed"?"consent_required":"needs_reauth",message:e&&e.type||"popup"})}});
+   c.requestAccessToken()})})}
+ function api(kind,url,opt,retry){opt=opt||{};return token(kind).then(function(t){var h=Object.assign({Authorization:"Bearer "+t},opt.headers||{});
+  return fetch(url,Object.assign({},opt,{headers:h})).then(function(r){
+   if(r.status===401){LS("tok_"+kind,null);if(!retry&&active())return api(kind,url,opt,true);throw{code:"needs_reauth",message:"Session Google expirée"}}
+   if(r.status===403||r.status===400)return r.json().catch(function(){return{}}).then(function(j){var m=(j.error&&j.error.message)||"refusé";throw{code:/insufficient|scope/i.test(m)?"consent_required":/has not been used|disabled/i.test(m)?"api_disabled":"tool_error",message:m}});
+   if(r.status===429)throw{code:"rate_limited",retryable:true};
+   if(!r.ok)throw{code:"upstream_error",message:"HTTP "+r.status,retryable:true};
+   return r.status===204?{}:r.json()})},function(e){throw e}).catch(function(e){if(e&&e.code)throw e;throw{code:"unavailable",message:String(e&&e.message||e),retryable:true}})}
+ /* ---------- Gmail ---------- */
+ var G="https://gmail.googleapis.com/gmail/v1/users/me/";
+ function hdr(m,n){var h=(m.payload&&m.payload.headers||[]).find(function(x){return x.name.toLowerCase()===n.toLowerCase()});return h?h.value:""}
+ function addr(v){var m=String(v||"").match(/<([^>]+)>/);return(m?m[1]:String(v||"")).trim().toLowerCase()}
+ function dname(v){var m=String(v||"").match(/^\s*"?([^"<]*?)"?\s*</);return m&&m[1]?m[1].trim():addr(v)}
+ function addrs(v){return String(v||"").split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(addr).filter(Boolean)}
+ function b64d(s){s=String(s||"").replace(/-/g,"+").replace(/_/g,"/");try{var bin=atob(s);var u=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new TextDecoder("utf-8").decode(u)}catch(e){return""}}
+ function b64eUtf(s){var u=new TextEncoder().encode(s);var b="";for(var i=0;i<u.length;i+=0x8000)b+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(b)}
+ function b64url(s){return s.replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+ function partText(p,mime){if(!p)return"";if(p.mimeType===mime&&p.body&&p.body.data)return b64d(p.body.data);var o="";(p.parts||[]).some(function(x){o=partText(x,mime);return !!o});return o}
+ function files(p,out){out=out||[];if(!p)return out;if(p.filename)out.push({filename:p.filename,mimeType:p.mimeType});(p.parts||[]).forEach(function(x){files(x,out)});return out}
+ function viewUrl(id){var a=acct("work");return"https://mail.google.com/mail/"+(a?"?authuser="+encodeURIComponent(a.email):"u/0/")+"#all/"+id}
+ function pool(arr,n,fn){var i=0,out=new Array(arr.length);function next(){if(i>=arr.length)return Promise.resolve();var k=i++;return fn(arr[k]).then(function(v){out[k]=v},function(){out[k]=null}).then(next)}var w=[];for(var j=0;j<Math.min(n,arr.length);j++)w.push(next());return Promise.all(w).then(function(){return out})}
+ function searchThreads(i){return api("work",G+"threads?maxResults="+(i.pageSize||40)+"&q="+encodeURIComponent(i.query||"")).then(function(j){
+  return pool(j.threads||[],8,function(t){return api("work",G+"threads/"+t.id+"?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=To")}).then(function(ts){
+   return{payload:{threads:ts.filter(Boolean).map(function(t){var ms=(t.messages||[]).slice().reverse();return{id:t.id,messageCount:(t.messages||[]).length,viewUrl:viewUrl(t.id),messages:ms.map(function(m){var f=hdr(m,"From");return{id:m.id,sender:addr(f),addressDisplayNames:[{emailAddress:addr(f),displayName:dname(f)}],subject:hdr(m,"Subject"),date:new Date(+m.internalDate).toISOString(),labelIds:m.labelIds||[],snippet:m.snippet||""}})}})}}})})}
+ function getThread(i){return api("work",G+"threads/"+i.threadId+"?format=full").then(function(t){return{payload:{messages:(t.messages||[]).map(function(m){var txt=partText(m.payload,"text/plain");if(!txt){var h=partText(m.payload,"text/html");txt=h.replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n").replace(/<[^>]+>/g,"").replace(/&nbsp;/g," ").replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&#39;/g,"'").replace(/&quot;/g,'"')}
+  return{id:m.id,sender:addr(hdr(m,"From")),toRecipients:addrs(hdr(m,"To")),ccRecipients:addrs(hdr(m,"Cc")),date:new Date(+m.internalDate).toISOString(),plaintextBody:txt,snippet:m.snippet,labelIds:m.labelIds||[],attachments:files(m.payload)}})}}})}
+ var sigP=null;function signature(){if(sigP)return sigP;sigP=api("work",G+"settings/sendAs").then(function(j){var p=(j.sendAs||[]).find(function(x){return x.isDefault})||(j.sendAs||[])[0]||{};return p.signature||""}).catch(function(){sigP=null;return""});return sigP}
+ function enc(s){return/^[\x20-\x7e]*$/.test(s)?s:"=?UTF-8?B?"+b64eUtf(s)+"?="}
+ function escH(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>")}
+ function wrap(b){return b.replace(/(.{76})/g,"$1\r\n")}
+ function createDraft(i){var thr=null,refs="";var pre=i.replyToMessageId?api("work",G+"messages/"+i.replyToMessageId+"?format=metadata&metadataHeaders=Message-ID&metadataHeaders=References").then(function(m){thr=m.threadId;var mid=hdr(m,"Message-ID");refs=(hdr(m,"References")+" "+mid).trim();return mid}):Promise.resolve("");
+  return Promise.all([pre,i.includeSignature?signature():Promise.resolve("")]).then(function(r){var mid=r[0],sig=r[1];var B="kn"+Math.random().toString(36).slice(2),A="ka"+Math.random().toString(36).slice(2);
+   var H=["MIME-Version: 1.0"];if(i.to&&i.to.length)H.push("To: "+i.to.join(", "));if(i.cc&&i.cc.length)H.push("Cc: "+i.cc.join(", "));H.push("Subject: "+enc(i.subject||""));if(mid){H.push("In-Reply-To: "+mid);H.push("References: "+refs)}
+   var body=String(i.body||"");var alt=["--"+A,"Content-Type: text/plain; charset=UTF-8","Content-Transfer-Encoding: base64","",wrap(b64eUtf(body+(sig?"\n\n--\n"+sig.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]+>/g,""):""))),"--"+A,"Content-Type: text/html; charset=UTF-8","Content-Transfer-Encoding: base64","",wrap(b64eUtf("<div dir=\"ltr\">"+escH(body)+"</div>"+(sig?"<br><div class=\"gmail_signature\">"+sig+"</div>":""))),"--"+A+"--"].join("\r\n");
+   var at=(i.attachments||[]).filter(function(a){return typeof a.content==="string"});var raw;
+   if(at.length){raw=H.concat(["Content-Type: multipart/mixed; boundary=\""+B+"\"","","--"+B,"Content-Type: multipart/alternative; boundary=\""+A+"\"","",alt].concat(at.map(function(a){return["--"+B,"Content-Type: "+(a.mimeType||"application/octet-stream")+"; name=\""+enc(a.filename)+"\"","Content-Disposition: attachment; filename=\""+enc(a.filename)+"\"","Content-Transfer-Encoding: base64","",wrap(a.content)].join("\r\n")})).concat(["--"+B+"--"])).join("\r\n")}
+   else raw=H.concat(["Content-Type: multipart/alternative; boundary=\""+A+"\"","",alt]).join("\r\n");
+   return api("work",G+"drafts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:Object.assign({raw:b64url(b64eUtf(raw))},thr?{threadId:thr}:{})})}).then(function(d){var a=acct("work");return{payload:{id:d.id,viewUrl:"https://mail.google.com/mail/"+(a?"?authuser="+encodeURIComponent(a.email):"u/0/")+"#drafts"}}})})}
+ /* ---------- Agenda ---------- */
+ function listEvents(i){var q="singleEvents=true&orderBy=startTime&maxResults="+Math.min(250,i.pageSize||250)+"&timeMin="+encodeURIComponent(new Date(i.startTime).toISOString())+"&timeMax="+encodeURIComponent(new Date(i.endTime).toISOString())+(i.pageToken?"&pageToken="+encodeURIComponent(i.pageToken):"");
+  return api("work","https://www.googleapis.com/calendar/v3/calendars/primary/events?"+q).then(function(j){return{payload:{nextPageToken:j.nextPageToken,events:(j.items||[]).map(function(e){var v=e.conferenceData&&(e.conferenceData.entryPoints||[]).find(function(x){return x.entryPointType==="video"});return Object.assign({},e,{conferenceUrl:e.hangoutLink||(v&&v.uri)||""})})}}})}
+ /* ---------- Drive (sauvegardes) ---------- */
+ var D="https://www.googleapis.com/drive/v3/files";var FOLDER="Kennach - Sauvegardes";
+ function folder(){var f=LS("drive_folder");if(f)return Promise.resolve(f);
+  return api("backup",D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+FOLDER+"' and trashed=false")+"&fields=files(id)").then(function(j){if(j.files&&j.files[0]){LS("drive_folder",j.files[0].id);return j.files[0].id}
+   return api("backup",D+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:FOLDER,mimeType:"application/vnd.google-apps.folder"})}).then(function(x){LS("drive_folder",x.id);return x.id})})}
+ window.KDrive={
+  save:function(name,text){return folder().then(function(fid){var B="kb"+Math.random().toString(36).slice(2);var body="--"+B+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:name,parents:[fid],mimeType:"application/json"})+"\r\n--"+B+"\r\nContent-Type: application/json\r\n\r\n"+text+"\r\n--"+B+"--";
+   return api("backup","https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size,createdTime",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+B},body:body})}).catch(function(e){if(e&&e.code==="tool_error"&&/notFound|File not found/i.test(e.message||"")){LS("drive_folder",null)}throw e})},
+  list:function(){return folder().then(function(fid){return api("backup",D+"?q="+encodeURIComponent("'"+fid+"' in parents and trashed=false")+"&orderBy=createdTime desc&pageSize=60&fields=files(id,name,size,createdTime)").then(function(j){return j.files||[]})})},
+  get:function(id){return token("backup").then(function(t){return fetch(D+"/"+id+"?alt=media",{headers:{Authorization:"Bearer "+t}}).then(function(r){if(!r.ok)throw{code:"upstream_error"};return r.text()})})},
+  del:function(id){return api("backup",D+"/"+id,{method:"DELETE"})}};
+ window.KG={account:acct,connected:function(k){return !!acct(k)},valid:function(k){return !!tokOk(k)},configured:function(){return !!clientId()},
+  connect:function(k){return token(k,true)},
+  disconnect:function(k){var t=LS("tok_"+k);LS("tok_"+k,null);LS("acct_"+k,null);if(k==="backup")LS("drive_folder",null);try{t&&window.google&&google.accounts.oauth2.revoke(t.at,function(){})}catch(e){}window.dispatchEvent(new Event("kg-change"))}};
+ window.KMCP={listTools:function(){return Promise.resolve({servers:[],fileArgs:false})},
+  callTool:function(srv,tool,input){
+   if(srv==="Gmail"&&tool==="search_threads")return searchThreads(input||{});
+   if(srv==="Gmail"&&tool==="get_thread")return getThread(input||{});
+   if(srv==="Gmail"&&tool==="create_draft")return createDraft(input||{});
+   if(srv==="Google Calendar"&&tool==="list_events")return listEvents(input||{});
+   return Promise.reject({code:"server_not_connected",message:srv})}};
+})();
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <style>
@@ -56,7 +143,7 @@ window.KNAME=function(){var u=window.KUSER;return((u&&u.displayName)||"").split(
    rec.onresult=function(ev){var fin="",part="";for(var i=ev.resultIndex;i<ev.results.length;i++){var t=ev.results[i][0].transcript;if(ev.results[i].isFinal)fin+=t;else part+=t}if(part)emit("p",{text:part});if(fin)emit("f",{text:fin.trim()})};
    rec.onstart=function(){emit("s",{state:"listening"});res()};rec.onend=function(){emit("s",{state:"idle"})};rec.onerror=function(e){emit("e",{code:e.error});if(e.error==="not-allowed")rej({code:"not_granted"})};rec.start()}catch(e){rej({code:"unavailable"})}})},
    stop:function(){try{rec&&rec.stop()}catch(e){}return Promise.resolve()},onPartial:on("p"),onFinal:on("f"),onState:on("s"),onError:on("e")}}
- window.claude={use:function(n){if(n==="db")return ok?userP.then(function(){return db}):Promise.resolve(null);if(n==="user")return ok?userP.then(function(){return user}):Promise.resolve(null);if(n==="downloads")return Promise.resolve(downloads);if(n==="dictation")return Promise.resolve(dict);return Promise.resolve(null)}};
+ window.claude={use:function(n){if(n==="db")return ok?userP.then(function(){return db}):Promise.resolve(null);if(n==="user")return ok?userP.then(function(){return user}):Promise.resolve(null);if(n==="downloads")return Promise.resolve(downloads);if(n==="dictation")return Promise.resolve(dict);if(n==="mcp")return Promise.resolve(window.KMCP||null);return Promise.resolve(null)}};
 })();
 </script>
 
@@ -512,6 +599,9 @@ mark{background:color-mix(in srgb,#F5C518 45%,transparent);color:inherit;border-
 .pa input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
 .pa small{display:block;color:var(--text-3);font-size:12px}
 
+body.sa.gw [data-nav=mails]{display:flex!important}
+.gacc{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
+.bkrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13.5px;border-bottom:1px solid var(--border)}.bkrow:last-child{border-bottom:0}
 body.sa [data-nav=mails],body.sa [data-nav=veille],body.sa [data-nav=photo],body.sa [data-nav=ask],body.sa [data-nav=import],body.sa [data-act=askact]{display:none!important}
 </style>
 </head>
@@ -1376,7 +1466,7 @@ function aiErr(e){const c=e&&e.code;
  if(c==="images_unavailable"||c==="image_rejected")return"Photo refusée (format ou taille). Essaie une autre photo, en JPEG ou PNG.";
  if(c==="session_expired")return"Reconnecte-toi.";
  return"Erreur IA ("+(c||"inconnue")+"). Réessaie.";}
-function mcpErr(e,srv){const c=e&&e.code;
+function mcpErr(e,srv){const c=e&&e.code;if(c==="needs_reauth")return"Connexion Google à renouveler : clique sur ↻ ou va dans Réglages › Comptes Google.";if(c==="not_configured")return"Google pas encore configuré : Réglages › Comptes Google.";if(c==="api_disabled")return"API Google non activée dans la console Google Cloud.";if(c==="consent_required")return"Accès Google refusé ou annulé.";
  if(c==="needs_reauth")return`Reconnecte ${srv} dans les Réglages.`;
  if(c==="server_not_connected")return`Ajoute ${srv} dans les Réglages.`;
  if(c==="not_in_manifest"||c==="approval_required"||c==="consent_required")return`Accès à ${srv} non autorisé pour Kennach. Clique à nouveau et accepte la demande.`;
@@ -1513,12 +1603,12 @@ function drawMail(){
  <div class="pick" style="margin-top:8px">${["Plus court","Plus formel","Réponse d'attente","Demander un délai","Simple, sans jargon"].map(x=>`<button class="tool" data-redo="${x}">${x}</button>`).join("")}${m.prevDrafts.length?`<button class="tool" data-act="undodraft">↶ Version d'avant</button>`:""}</div>
  <div style="margin-top:12px"><button class="btn" data-act="attach">📎 Joindre</button> ${m.files.map((f,k)=>`<span class="att">📄 ${esc(f.name)} (${Math.ceil(f.size/1024)} Ko) <button data-rmatt="${k}" style="margin-left:4px">✕</button></span>`).join("")}</div>
  <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-act="gdraft" ${m.busy?"disabled":""}>Créer le brouillon Gmail</button><button class="btn" data-act="mail2task">+ Tâche</button></div>
- <div class="histo">Réponse à ${esc(last&&!last.sent?last.from:m.from)} · modèle léger · rien n'est envoyé : tu relis et tu envoies depuis Gmail.</div>`:`<button class="btn ai" data-act="mkdraft">${I.spark} Faire le brouillon</button> <button class="btn" data-act="mail2task">+ Tâche</button>`}</div>`:""}</div>`;
+ <div class="histo">Réponse à ${esc(last&&!last.sent?last.from:m.from)} · modèle léger · rien n'est envoyé : tu relis et tu envoies depuis Gmail.</div>`:`<button class="btn ai" data-act="mkdraft">${CAP.sample?I.spark+" Faire le brouillon":"✎ Écrire la réponse"}</button> <button class="btn" data-act="mail2task">+ Tâche</button>`}</div>`:""}</div>`;
  $("#drawer").classList.add("on");$("#scrim").classList.add("on");
  const d=$("#draft");if(d)d.addEventListener("input",()=>{U.mail.draft=d.value});
 }
 async function mkDraft(instr){
- const m=U.mail;if(!m||!m.thread)return;if(!CAP.sample)return toast("IA indisponible ici.");
+ const m=U.mail;if(!m||!m.thread)return;if(!CAP.sample){m.draft=m.draft||"Bonjour,\n\n\n\nBien cordialement,";drawMail();setTimeout(()=>{const d=$("#draft");if(d){d.focus();d.selectionStart=d.selectionEnd=10}},60);return}
  const d=$("#draft");if(d)m.draft=d.value;if(instr&&m.draft)m.prevDrafts.push(m.draft);
  const n=nonce();const ext=[...m.thread].reverse().find(x=>!x.sent);const who=ext?findPersonByMail(ext.from):null;
  m.busy=true;const keep=m.draft;drawMail();
@@ -1942,7 +2032,7 @@ function meetLine(){if(!ST.settings.calOn)return"";const m=nextMeeting();if(!m)r
  return `<p style="margin-top:6px;font-size:14px">📅 ${mins<=0?"En cours":"Prochaine réunion"} : <b>${hm(m.start)} ${esc(m.title)}</b>${mins>0?` <span class="sub">(dans ${mins<60?mins+" min":Math.floor(mins/60)+" h "+pad2(mins%60)})</span>`:""}</p>`}
 function todayMeetings(){if(!CAP.mcp)return"";if(!ST.settings.calOn)return `<div class="calcta"><span>📅 Voir tes réunions Google Agenda ici et dans le Calendrier</span><button class="btn" data-act="calon">Afficher</button></div>`;
  const k=monthKey(new Date());if(!GCAL.by[k]&&!GCAL.busy[k]&&!GCAL.err)setTimeout(()=>loadCal(new Date()),0);
- const L=eventsOn(today0());if(GCAL.err)return `<div class="banner">Agenda indisponible (${esc(GCAL.err)}). <button class="tool" data-act="calreload">Réessayer</button></div>`;
+ const L=eventsOn(today0());if(GCAL.err)return `<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ton compte Google pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} <button class="tool" data-act="calreload">Réessayer</button></div>`;
  return `<div class="grp">Réunions aujourd'hui <span class="n">${L.length}</span>${GCAL.busy[k]?'<span class="sub" style="text-transform:none;letter-spacing:0">· chargement…</span>':""}</div>${L.length?`<div class="list evl">${L.map(e=>evRow(e)).join("")}</div>`:GCAL.busy[k]?"":`<div class="empty" style="padding:14px">Aucune réunion aujourd'hui.</div>`}`}
 
 /* 12-14. Calendrier v2 : mois / agenda, glisser une tâche sur un jour */
@@ -1953,7 +2043,7 @@ V.cal=()=>{const b=today0();b.setDate(1);b.setMonth(b.getMonth()+U.calM);const y
  const its=items().filter(i=>i.due&&!i.deletedAt);const byD=d=>its.filter(i=>new Date(i.due).toDateString()===d.toDateString()).sort((a,c)=>new Date(a.due)-new Date(c.due));
  const head=`<div class="hdr"><div><h1>${cap1(MOIS[mo])} ${y}</h1><div class="sub">${ST.settings.calOn?`Tâches + réunions Google Agenda${busy?" · chargement…":GCAL.by[k]?" · à jour "+hm(new Date(GCAL.by[k].at)):""}`:"Tout ce qui a une date."}</div></div><div class="act"><div class="seg"><button class="${U.calV==="month"?"on":""}" data-calv="month">Mois</button><button class="${U.calV==="agenda"?"on":""}" data-calv="agenda">Agenda</button></div><button class="btn" data-calm="-1" aria-label="Mois précédent">←</button><button class="btn" data-calm="0">Auj.</button><button class="btn" data-calm="1" aria-label="Mois suivant">→</button>${ST.settings.calOn?`<button class="btn" data-act="calreload" title="Recharger l'agenda">↻</button>`:""}</div></div>
  ${CAP.mcp&&!ST.settings.calOn?`<div class="calcta"><span>📅 Ajouter tes réunions Google Agenda, en lecture seule</span><button class="btn pri" data-act="calon">Afficher mes réunions</button></div>`:""}
- ${GCAL.err?`<div class="banner">Agenda indisponible (${esc(GCAL.err)}). Vérifie la connexion à ton compte Google. <button class="tool" data-act="calreload">Réessayer</button></div>`:""}`;
+ ${GCAL.err?`<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ton compte Google pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} Vérifie la connexion à ton compte Google. <button class="tool" data-act="calreload">Réessayer</button></div>`:""}`;
  if(U.calV==="agenda"){const start=U.calM?new Date(y,mo,1):today0();const end=new Date(start);end.setDate(end.getDate()+(U.calM?new Date(y,mo+1,0).getDate():21));const out=[];
   for(let d=new Date(start);d<end;d.setDate(d.getDate()+1)){const dd=new Date(d);const ev=eventsOn(dd),ti=byD(dd);if(!ev.length&&!ti.length&&dd.toDateString()!==new Date().toDateString())continue;
    out.push(`<div class="grp ${dd.toDateString()===new Date().toDateString()?"tod":""}">${cap1(JOURS[dd.getDay()])} ${dd.getDate()} ${MOIS[dd.getMonth()]} <button class="tool" style="margin-left:auto;text-transform:none;letter-spacing:0" data-addday="${iso(dd)}">+ Ajouter</button></div>${ev.length?`<div class="list evl" style="margin-bottom:6px">${ev.map(e=>evRow(e)).join("")}</div>`:""}${listHTML(ti)||(ev.length?"":'<div class="sub" style="padding:4px 2px 8px">Rien de prévu.</div>')}`)}
@@ -2120,9 +2210,69 @@ function planHTML(){const P=U.plan;if(!P)return"";if(P.busy)return `<div class="
  return `<div class="card">${P.msg?`<p style="margin-bottom:10px">${esc(P.msg)}</p>`:""}${P.acts.length?`<div class="plan">${P.acts.map((a,k)=>`<label class="pa ${a.on?"":"off"}"><input type="checkbox" data-pk2="${k}" ${a.on?"checked":""}><span>${actLabel(a)}${a.r?`<small>${esc(a.r)}</small>`:""}</span></label>`).join("")}</div>
  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-act="planok" ${on?"":"disabled"}>Appliquer (${on})</button><button class="btn" data-act="planall">Tout cocher</button><button class="btn" data-act="planno">Annuler</button></div><div class="histo">Rien n'est fait tant que tu ne cliques pas sur « Appliquer ». Tu peux tout annuler juste après.</div>`:'<div class="sub">Aucune action proposée.</div>'}</div>`}
 
+
+/* ================= Kennach autonome : comptes Google, sauvegardes, hors connexion ================= */
+const KG_DEFAULT="__KG_CLIENT__";
+window.KG_CLIENT=KG_DEFAULT.indexOf("__")===0?"":KG_DEFAULT;
+function kgSync(){if(ST.settings.gClientId)window.KG_CLIENT=ST.settings.gClientId;document.body.classList.toggle("gw",!!(window.KG&&KG.connected("work")))}
+window.addEventListener("kg-change",()=>{kgSync();U.bkLoaded=false;schedule()});
+/* --- compression --- */
+async function gz64(txt){if(!window.CompressionStream)return"raw:"+txt;const cs=new Blob([txt]).stream().pipeThrough(new CompressionStream("gzip"));const buf=new Uint8Array(await new Response(cs).arrayBuffer());let b="";for(let i=0;i<buf.length;i+=0x8000)b+=String.fromCharCode.apply(null,buf.subarray(i,i+0x8000));return btoa(b)}
+async function ungz64(s){if(String(s).startsWith("raw:"))return s.slice(4);const bin=atob(s);const u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);const ds=new Blob([u]).stream().pipeThrough(new DecompressionStream("gzip"));return await new Response(ds).text()}
+/* --- sauvegardes --- */
+U.bk={fs:[],dr:[],err:null};U.bkLoaded=false;
+async function snapFirebase(force){if(ST.mode!=="db"||!ST.db)return false;const d=ymd(new Date());if(!force&&ST.settings.lastSnap===d)return false;
+ const txt=JSON.stringify(backupData());const gz=await gz64(txt);if(gz.length>950000){toast("Sauvegarde Firebase trop grosse : utilise Drive ou le téléchargement.",null,"danger");return false}
+ await ST.db.doc("backups/"+d).set({at:nowIso(),n:items().length,size:txt.length,gz});putSettings({lastSnap:d});
+ try{const s=await ST.db.collection("backups").get();const ids=s.docs.map(x=>x.id).sort().reverse();ids.slice(14).forEach(id=>ST.db.doc("backups/"+id).delete())}catch(e){}
+ return true}
+async function snapDrive(force){if(!window.KDrive||!KG.connected("backup"))return false;if(!force&&!KG.valid("backup"))return false;
+ const last=ST.settings.lastDrive?Date.now()-new Date(ST.settings.lastDrive):1e12;if(!force&&last<20*3600e3)return false;
+ const n=new Date();await KDrive.save(`kennach-${ymd(n)}-${pad2(n.getHours())}${pad2(n.getMinutes())}.json`,JSON.stringify(backupData(),null,1));putSettings({lastDrive:nowIso(),lastBackup:nowIso()});
+ try{const L=await KDrive.list();L.slice(30).forEach(f=>KDrive.del(f.id))}catch(e){}
+ return true}
+async function autoBackup(){try{await snapFirebase(false)}catch(e){}try{await snapDrive(false)}catch(e){}}
+async function backupNow(){U.bk.busy=true;render();const out=[];
+ try{if(await snapFirebase(true))out.push("Firebase")}catch(e){out.push("Firebase ✕")}
+ if(window.KG&&KG.connected("backup")){try{await snapDrive(true);out.push("Drive")}catch(e){out.push("Drive ✕ ("+(e.code==="needs_reauth"?"reconnecte Drive":e.code||"erreur")+")")}}
+ U.bk.busy=false;U.bkLoaded=false;render();toast("Sauvegarde : "+(out.join(" + ")||"rien"),null,out.some(x=>x.includes("✕"))?"danger":"",6000)}
+async function loadBk(){U.bkLoaded=true;U.bk.err=null;
+ try{const s=await ST.db.collection("backups").get();U.bk.fs=s.docs.map(d=>({id:d.id,...d.data(),gz:undefined})).sort((a,b)=>b.id.localeCompare(a.id))}catch(e){U.bk.fs=[]}
+ U.bk.dr=[];if(window.KG&&KG.valid("backup")){try{U.bk.dr=await KDrive.list()}catch(e){U.bk.err=e.code||"erreur"}}schedule()}
+async function restoreFrom(kind,id){if(!confirm("Restaurer cette sauvegarde ?\nKennach ajoute ce qui manque et remet les éléments plus anciens que la sauvegarde. Les notes plus récentes ne sont pas écrasées."))return;
+ try{let txt;if(kind==="fs"){const d=await ST.db.doc("backups/"+id).get();txt=await ungz64(d.data().gz)}else txt=await KDrive.get(id);await restoreFile(new File([txt],"sauvegarde.json"))}catch(e){toast("Restauration impossible ("+(e.code||"erreur")+").",null,"danger")}}
+const fmtSize=b=>b>1e6?(b/1e6).toFixed(1)+" Mo":Math.max(1,Math.round(b/1e3))+" Ko";
+function saCards(){if(!U.bkLoaded&&ST.mode==="db")setTimeout(loadBk,0);
+ const row=(k,l,d)=>{const a=window.KG&&KG.account(k);return `<div class="gacc"><div style="flex:1;min-width:0"><b>${l}</b><div class="sub" style="font-size:13px">${a?esc(a.email)+(KG.valid(k)?" · connecté":" · reconnexion au prochain clic"):d}</div></div>${a?`<button class="btn" data-act="gdis" data-k="${k}">Déconnecter</button>`:`<button class="btn pri" data-act="gcon" data-k="${k}" ${KG.configured()?"":"disabled"}>Connecter</button>`}</div>`};
+ const lastFs=ST.settings.lastSnap?fmtDate(ST.settings.lastSnap+"T12:00:00"):"jamais",lastDr=ST.settings.lastDrive?fmtDate(ST.settings.lastDrive)+" "+hm(new Date(ST.settings.lastDrive)):"jamais";
+ return `<div class="card"><b>Comptes Google</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 6px">Connexion directe à Google, sans intermédiaire. Elle dure 1 h ; ensuite, un clic suffit pour la renouveler.</p>
+ ${row("work","Travail : Gmail + Agenda","Ton compte pro : mails à traiter, brouillons, réunions.")}${row("backup","Sauvegarde : Google Drive","Copie de tes notes dans le dossier « Kennach - Sauvegardes ».")}
+ ${KG.configured()?"":`<div class="lbl2">Identifiant client Google (se termine par .apps.googleusercontent.com)</div><div class="frow"><input class="fld" id="gcid" style="flex:1" placeholder="xxxx.apps.googleusercontent.com"><button class="btn" data-act="gcidsave">Enregistrer</button></div>`}</div>
+ <div class="card"><b>Sauvegardes</b><p style="color:var(--text-2);font-size:14px;margin:4px 0 10px">Automatique chaque jour : une copie dans Firebase (14 jours gardés)${KG.connected("backup")?" et une sur Drive (30 gardées)":""}. Dernière Firebase : <b>${lastFs}</b> · Drive : <b>${lastDr}</b>.</p>
+ <div class="frow"><button class="btn pri" data-act="bknow" ${U.bk.busy?"disabled":""}>${U.bk.busy?"Sauvegarde…":"Sauvegarder maintenant"}</button>${KG.connected("backup")&&!KG.valid("backup")?`<button class="btn" data-act="gcon" data-k="backup">Reconnecter Drive</button>`:""}</div>
+ ${U.bk.fs.length?`<div class="lbl2">Dans Firebase</div><div class="list">${U.bk.fs.map(b=>`<div class="bkrow"><span>${fmtDate(b.id+"T12:00:00")} · ${b.n||"?"} éléments · ${fmtSize(b.size||0)}</span><button class="tool" data-act="rfs" data-id="${esc(b.id)}">Restaurer</button></div>`).join("")}</div>`:""}
+ ${U.bk.dr.length?`<div class="lbl2">Sur Drive</div><div class="list">${U.bk.dr.slice(0,15).map(f=>`<div class="bkrow"><span>${esc(f.name)} · ${fmtSize(+f.size||0)}</span><button class="tool" data-act="rdr" data-id="${esc(f.id)}">Restaurer</button></div>`).join("")}</div>`:""}
+ ${U.bk.err?`<div class="sub" style="color:var(--danger);font-size:13px;margin-top:6px">Drive : ${esc(U.bk.err)}</div>`:""}</div>`}
+{const _vs=V.settings;V.settings=()=>_vs().replace('<div class="card"><b>Données</b>',saCards()+'<div class="card"><b>Données</b>')}
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-act]");if(!t)return;const a=t.dataset.act,k=t.dataset.k,id=t.dataset.id;
+ if(a==="gcon"){try{await KG.connect(k);toast(k==="work"?"Gmail et Agenda connectés":"Drive connecté");if(k==="work"&&!ST.settings.calOn)putSettings({calOn:true});if(k==="backup")snapDrive(false).then(ok=>{if(ok)toast("Première sauvegarde Drive faite ✓")}).catch(()=>{})}catch(x){toast(x.code==="consent_required"?"Connexion annulée.":x.code==="not_configured"?"Ajoute d'abord l'identifiant client Google.":"Connexion Google impossible ("+(x.message||x.code)+").",null,"danger",7000)}U.bkLoaded=false;kgSync();render();return}
+ if(a==="gdis"){if(confirm("Déconnecter ce compte Google de Kennach ?")){KG.disconnect(k);toast("Déconnecté")}return}
+ if(a==="gcidsave"){const v=($("#gcid")||{}).value||"";if(!/\.apps\.googleusercontent\.com$/.test(v.trim()))return toast("Identifiant invalide : il doit finir par .apps.googleusercontent.com");putSettings({gClientId:v.trim()});window.KG_CLIENT=v.trim();toast("Identifiant enregistré");return}
+ if(a==="bknow")return backupNow();
+ if(a==="rfs")return restoreFrom("fs",id);
+ if(a==="rdr")return restoreFrom("dr",id);
+});
+/* --- hors connexion --- */
+{const _ss=setSync;setSync=function(){_ss();if(!navigator.onLine){const t=$("#synctxt");if(t)t.textContent="Hors connexion · gardé sur l'appareil";[$("#syncdot"),$("#syncdot2")].forEach(d=>d&&(d.className="sync wait"))}}}
+window.addEventListener("online",()=>{setSync();toast("De retour en ligne : synchronisation…")});window.addEventListener("offline",()=>{setSync();toast("Hors connexion : tes notes restent enregistrées sur l'appareil.")});
+/* --- démarrage --- */
+{const _al=afterLoad;afterLoad=function(){_al();kgSync();setTimeout(autoBackup,15000);setInterval(autoBackup,3*3600e3);
+ if(/iPhone|iPad/.test(navigator.userAgent)&&!navigator.standalone&&!ST.settings.iosHint){toast("Astuce : Partager › « Sur l'écran d'accueil » pour installer Kennach.",null,"",8000);putSettings({iosHint:true})}}}
+{const _r=render;render=function(){if(ST.settings&&ST.settings.gClientId)window.KG_CLIENT=ST.settings.gClientId;_r()}}
+
 document.body.classList.add("sa");
 boot();
-if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator){const hadSW=!!navigator.serviceWorker.controller;navigator.serviceWorker.register("sw.js").then(r=>{setInterval(()=>r.update().catch(()=>{}),3600e3)}).catch(()=>{});navigator.serviceWorker.addEventListener("controllerchange",()=>{if(!hadSW||document.getElementById("kupd"))return;const b=document.createElement("button");b.id="kupd";b.textContent="✨ Nouvelle version de Kennach : toucher pour l’ouvrir";b.style.cssText="position:fixed;top:calc(10px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:95;padding:10px 16px;border-radius:12px;background:var(--accent);color:#fff;font-weight:600;box-shadow:var(--e3)";b.onclick=()=>location.reload();document.body.appendChild(b)})}
 
 </script>
 </body>
