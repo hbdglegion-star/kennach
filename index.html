@@ -15,14 +15,15 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script>
 
+
 /* Kennach autonome : comptes Google et Microsoft (mails, agenda, sauvegarde), sans serveur */
 (function(){
  var LS=function(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem("kp_"+k)||"null");if(v===null)localStorage.removeItem("kp_"+k);else localStorage.setItem("kp_"+k,JSON.stringify(v))}catch(e){return null}};
  function active(){try{return !!(navigator.userActivation&&navigator.userActivation.isActive)}catch(e){return false}}
  function E(code,msg,extra){var e={code:code,message:msg||code};if(extra)for(var k in extra)e[k]=extra[k];return e}
- var SC={google:{mail:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly"],backup:["https://www.googleapis.com/auth/drive.file"],base:["email"]},
+ var SC={google:{mail:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly"],backup:["https://www.googleapis.com/auth/drive.file"],fiches:["https://www.googleapis.com/auth/drive.readonly"],base:["email"]},
          ms:{mail:["Mail.ReadWrite","Calendars.Read"],backup:["Files.ReadWrite.AppFolder"],base:["openid","profile","email","offline_access","User.Read"]}};
- function scopes(acc){var s=SC[acc.prov];var o=s.base.slice();if(acc.roles&&acc.roles.mail)o=o.concat(s.mail);if(acc.roles&&acc.roles.backup)o=o.concat(s.backup);return o}
+ function scopes(acc){var s=SC[acc.prov];var o=s.base.slice();if(acc.roles&&acc.roles.mail)o=o.concat(s.mail);if(acc.roles&&acc.roles.backup)o=o.concat(s.backup);if(acc.roles&&acc.roles.fiches&&s.fiches)o=o.concat(s.fiches);return o}
  function cfg(){return window.KCFG||{}}
  /* ---------- Google (GIS) ---------- */
  var gisP=null;function gis(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();if(gisP)return gisP;
@@ -146,6 +147,12 @@
   list:function(acc){return api(acc,GR+"drive/special/approot/children?$select=id,name,size,createdDateTime&$top=100").then(function(j){return(j.value||[]).filter(function(f){return/\.json$/.test(f.name)}).sort(function(a,b){return new Date(b.createdDateTime)-new Date(a.createdDateTime)}).map(function(f){return{id:f.id,name:f.name,size:f.size||0,at:f.createdDateTime}})})},
   get:function(acc,id){return api(acc,GR+"drive/items/"+id+"/content",{raw:true}).then(function(r){return r.text()})},
   del:function(acc,id){return api(acc,GR+"drive/items/"+id,{method:"DELETE"})}};
+ /* ---------- Fiches (dossier Google Drive, lecture seule) ---------- */
+ var fiches={D:"https://www.googleapis.com/drive/v3/files",
+  folderId:function(acc,name){var D=this.D;return api(acc,D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+String(name).replace(/'/g,"\\'")+"' and trashed=false")+"&fields=files(id,name)&pageSize=5").then(function(j){if(!j.files||!j.files.length)throw E("not_found","Dossier « "+name+" » introuvable");return j.files[0].id})},
+  list:function(acc,name){var D=this.D;return this.folderId(acc,name).then(function(fid){var out=[];function page(tok){return api(acc,D+"?q="+encodeURIComponent("'"+fid+"' in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'")+"&fields=nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,size)&pageSize=200&orderBy=modifiedTime desc"+(tok?"&pageToken="+encodeURIComponent(tok):"")).then(function(j){out=out.concat(j.files||[]);return j.nextPageToken&&out.length<1000?page(j.nextPageToken):out})}return page(null)})},
+  text:function(acc,f){var D=this.D;if(f.mimeType==="application/vnd.google-apps.document")return api(acc,D+"/"+f.id+"/export?mimeType="+encodeURIComponent("text/markdown"),{raw:true}).then(function(r){return r.text()},function(){return api(acc,D+"/"+f.id+"/export?mimeType=text/plain",{raw:true}).then(function(r){return r.text()})});
+   if(/^text\//.test(f.mimeType))return api(acc,D+"/"+f.id+"?alt=media",{raw:true}).then(function(r){return r.text()});return Promise.resolve("")}};
  /* ---------- interface pour l'app ---------- */
  function accs(){return(window.KACCS||[]).filter(function(a){return a&&a.id&&a.prov})}
  function mailAcc(){var L=accs().filter(function(a){return a.roles&&a.roles.mail});var cur=L.find(function(a){return a.id===window.KMAILACC});return cur||L[0]||null}
@@ -154,7 +161,7 @@
   forget:function(acc){var t=LS("tok_"+acc.id);LS("tok_"+acc.id,null);LS("gfolder_"+acc.id,null);try{if(t&&acc.prov==="google"&&window.google)google.accounts.oauth2.revoke(t.at,function(){})}catch(e){}},
   valid:function(acc){var t=LS("tok_"+acc.id);if(!t||t.sc!==scopes(acc).join(" "))return false;return t.exp>Date.now()+60000||(acc.prov==="ms"&&!!t.rt&&t.rtExp>Date.now())},
   backup:{save:function(acc,n,t){return(acc.prov==="ms"?onedrive:gdrive).save(acc,n,t)},list:function(acc){return(acc.prov==="ms"?onedrive:gdrive).list(acc)},get:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).get(acc,id)},del:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).del(acc,id)}},
-  mailAcc:mailAcc,redirectUri:redirectUri};
+  mailAcc:mailAcc,redirectUri:redirectUri,fiches:fiches};
  window.KMCP={listTools:function(){return Promise.resolve({servers:[],fileArgs:false})},
   callTool:function(srv,tool,input){input=input||{};
    if(srv==="Gmail"){var a=mailAcc();if(!a)return Promise.reject(E("not_configured","Aucun compte mail"));var P=a.prov==="ms"?outlook:gmail;
@@ -668,6 +675,7 @@ mark{background:color-mix(in srgb,#F5C518 45%,transparent);color:inherit;border-
 .pa input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
 .pa small{display:block;color:var(--text-3);font-size:12px}
 
+.firow{display:flex;gap:12px;align-items:center;justify-content:space-between;width:100%;text-align:left;padding:12px 16px;text-decoration:none;color:inherit;position:relative}.firow+.firow::before{content:"";position:absolute;left:16px;right:0;top:0;height:.5px;background:var(--border)}.firow:hover{background:color-mix(in srgb,var(--text) 4%,transparent)}.fi-t{display:flex;flex-direction:column;min-width:0;flex:1}.fi-t b{font-weight:600;font-size:15.5px;display:flex;gap:7px;align-items:center}.fi-t span{font-size:12.5px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.firow small{color:var(--text-3);font-size:12px;white-space:nowrap}.fdot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
 /* ===== Kennach · style Apple ===== */
 :root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI Variable",system-ui,sans-serif;--display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI Variable",system-ui,sans-serif;
  --bg:#F2F2F7;--surface:#FFFFFF;--surface-2:#EEEEF3;--border:rgba(60,60,67,.13);--text:#000;--text-2:rgba(60,60,67,.62);--text-3:rgba(60,60,67,.38);--accent:#007AFF;--accent-soft:rgba(0,122,255,.12);--ok:#34C759;--warn:#FF9500;--danger:#FF3B30;--wait:#AF52DE;
@@ -749,6 +757,7 @@ body.sa .btn svg{flex:none}
  body.sa .drawer{border-radius:14px 14px 0 0}
  .acc-r{margin-left:0}
 }
+a.btn{text-decoration:none}
 
 body.sa.noai .redo,body.sa.noai .pick:has([data-redo]),body.sa.noai .histo .mlight{display:none!important}
 body.sa.gw [data-nav=mails]{display:flex!important}
@@ -949,19 +958,19 @@ function guess(i){
 
 /* ================= état UI + navigation ================= */
 const U={view:"today",space:null,person:null,sel:null,jday:0,meet:null,edMode:{}};
-const VIEWS=["tasks","today","inbox","tri","upcoming","waiting","carnet","journal","decisions","meeting","search","settings","trash","ask","photo","mails","veille","review","import","cal"];
+const VIEWS=["tasks","today","inbox","tri","upcoming","waiting","carnet","journal","decisions","meeting","search","settings","trash","ask","photo","mails","veille","review","import","cal","fiches"];
 function nav(v,arg){if($("#drawer").classList.contains("on"))closeDrawer();if($("#pal").classList.contains("on"))closePal();U.view=v;if(v==="space")U.space=arg;if(v==="person")U.person=arg;
  if(VIEWS.includes(v)){try{history.replaceState(null,"","#"+v)}catch(e){}}
  render();const m=$("#main");if(m)m.scrollTop=0}
 let rq=false;function schedule(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 const counts=()=>{const a=items();return{inbox:a.filter(i=>i.status==="inbox").length,wait:a.filter(i=>i.status==="waiting").length,late:a.filter(i=>open_(i)&&i.due&&diffD(i.due)<0&&i.status!=="someday").length}};
-const V_TITLE={today:"",inbox:"· Boîte",tri:"· Trier",tasks:"· Mes tâches",upcoming:"· À venir",waiting:"· En attente",carnet:"· Carnet",space:"· Espace",person:"· Personne",journal:"· Journal",decisions:"· Décisions",meeting:"· Réunion",search:"· Chercher",settings:"· Réglages",trash:"· Corbeille",ask:"· Demande",photo:"· Photo",mails:"· Mails",veille:"· Veille",review:"· Revue",import:"· Import",cal:"· Calendrier"};
-const MORE_V=["cal","tasks","upcoming","waiting","search","ask","photo","mails","veille","journal","decisions","meeting","review","settings","trash","import"];
+const V_TITLE={today:"",inbox:"· Boîte",tri:"· Trier",tasks:"· Mes tâches",upcoming:"· À venir",waiting:"· En attente",carnet:"· Carnet",space:"· Espace",person:"· Personne",journal:"· Journal",decisions:"· Décisions",meeting:"· Réunion",search:"· Chercher",settings:"· Réglages",trash:"· Corbeille",ask:"· Demande",photo:"· Photo",mails:"· Mails",veille:"· Veille",review:"· Revue",import:"· Import",cal:"· Calendrier",fiches:"· Fiches"};
+const MORE_V=["fiches","cal","tasks","upcoming","waiting","search","ask","photo","mails","veille","journal","decisions","meeting","review","settings","trash","import"];
 function moreSheet(){
  const c=counts();const b=(v,ic,l,sub,badge)=>`<button class="sp" style="display:flex;gap:12px;align-items:center;padding:12px 14px" data-nav="${v}"><span class="ic" style="width:24px;height:24px">${ic}</span><div style="flex:1;min-width:0"><b style="font-size:15px">${l}</b><p style="margin:0">${sub}</p></div>${badge?`<span class="chip t-task">${badge}</span>`:""}</button>`;
  $("#drawer").innerHTML=`<div class="dh"><b>Tout Kennach</b><button class="x" data-act="close">${I.x}</button></div><div class="db">
  <div class="lbl2" style="margin-top:0">Mes tâches</div><div style="display:grid;gap:8px">${b("tasks",I.check.replace(/12/g,"20").replace('stroke-width="3.2"','stroke="currentColor" stroke-width="2"'),"Toutes mes tâches","Tout ce qui est à faire, par espace")}${b("upcoming",I.cal,"À venir","Ce qui a une date dans les prochains jours")}${b("cal",I.cal,"Calendrier","Le mois en un coup d'œil")}${b("waiting",I.wait,"En attente de","Ce que les autres te doivent",c.wait||"")}</div>
- <div class="lbl2">Outils</div><div style="display:grid;gap:8px">${b("mails",I.mail,"Mails","Répondre avec un brouillon fait par l'IA")}${b("photo",I.cam,"Photo du cahier","Photographier une page, l'IA la tape")}${b("ask",I.spark,"Demande au carnet","Poser une question sur tes notes")}${b("veille",I.globe,"Veille","Failles et pannes : Mon parc et monde",vCrit()||"")}${b("search",I.search,"Chercher","Retrouver une note")}</div>
+ <div class="lbl2">Outils</div><div style="display:grid;gap:8px">${b("mails",I.mail,"Mails","Répondre avec un brouillon fait par l'IA")}${b("fiches",I.book,"Fiches","Tes sujets : résumé, détail, journaux")}${b("photo",I.cam,"Photo du cahier","Photographier une page, l'IA la tape")}${b("ask",I.spark,"Demande au carnet","Poser une question sur tes notes")}${b("veille",I.globe,"Veille","Failles et pannes : Mon parc et monde",vCrit()||"")}${b("search",I.search,"Chercher","Retrouver une note")}</div>
  <div class="lbl2">Suivi</div><div style="display:grid;gap:8px">${b("meeting",I.meet,"Mode réunion","Notes de réunion → décisions + actions")}${b("journal",I.cal,"Journal du jour","Ce que tu as noté et fini aujourd'hui")}${b("decisions",I.dec,"Décisions","Tout ce qui a été décidé")}${b("review",I.star,"Revue hebdo","15 min le vendredi pour tout remettre à plat")}${SHARED.imports&&SHARED.imports.size?b("import",I.inbox,"Import","Éléments à valider",SHARED.imports.size):""}${b("settings",I.star,"Réglages","Thème, sauvegarde, aide")}</div></div>`;
  $("#drawer").classList.add("on");$("#scrim").classList.add("on");
 }
@@ -972,7 +981,7 @@ function renderSide(){
  <button class="capbtn" data-act="cap">${I.plus}<span>Capturer…</span><kbd>C</kbd></button>
  ${n("today",I.sun,"Aujourd'hui",c.late||null)}${n("inbox",I.inbox,"Boîte",c.inbox,true)}${n("tasks",I.check.replace(/12/g,"18").replace("stroke-width=\"3.2\"","stroke=\"currentColor\" stroke-width=\"2\""),"Toutes mes tâches")}${n("upcoming",I.cal,"À venir")}${n("cal",I.cal,"Calendrier")}${n("waiting",I.wait,"En attente de",c.wait)}${n("carnet",I.book,"Carnet")}
  ${projs.length?`<div class="sec">Projets</div>${projs.map(s=>`<button class="nav ${U.view==="space"&&U.space===s.id?"on":""}" data-space="${s.id}"><span class="dot" style="background:${s.color}"></span><span class="lbl">${esc(s.name)}</span><span class="ct">${items().filter(i=>i.space===s.id&&open_(i)&&i.type==="task").length||""}</span></button>`).join("")}`:""}
- <div class="sec">Outils</div>${n("ask",I.spark,"Demande au carnet")}${n("photo",I.cam,"Photo du cahier")}${n("mails",I.mail,"Mails")}${n("veille",I.globe,"Veille",vCrit()||null,true)}${SHARED.imports.size?n("import",I.inbox,"Import",SHARED.imports.size,true):""}
+ <div class="sec">Outils</div>${n("ask",I.spark,"Demande au carnet")}${n("photo",I.cam,"Photo du cahier")}${n("mails",I.mail,"Mails")}${n("fiches",I.book,"Fiches")}${n("veille",I.globe,"Veille",vCrit()||null,true)}${SHARED.imports.size?n("import",I.inbox,"Import",SHARED.imports.size,true):""}
  <div class="sec">Flux</div>${n("journal",I.cal,"Journal du jour")}${n("decisions",I.dec,"Décisions")}${n("meeting",I.meet,"Mode réunion")}${n("review",I.star,"Revue hebdo")}${n("settings",I.star,"Réglages")}
  <div class="foot"><span class="sync" id="syncdot"></span><span id="synctxt"></span><button style="margin-left:auto" data-act="theme" title="Thème">${I.moon}</button></div>`;
  const bt=(v,ic,l,badge)=>`<button class="${U.view===v?"on":""}" data-nav="${v}">${ic}<span>${l}</span>${badge?`<span class="badge">${badge}</span>`:""}</button>`;
@@ -2410,7 +2419,7 @@ async function addAccount(prov){const a={id:(prov==="ms"?"m_":"g_")+Date.now().t
 function accErr(e){const c=e&&e.code;if(c==="not_configured")return"Ajoute d'abord l'identifiant de l'app (Réglages › Identifiants techniques).";if(c==="consent_required")return"Connexion annulée.";if(c==="popup_blocked")return"Fenêtre bloquée par le navigateur : autorise les fenêtres pour Kennach.";
  if(c==="admin_consent")return"Ton entreprise demande l'accord de l'administrateur pour cette app. Détail : "+(e.message||"");return"Connexion impossible ("+(e.message||c||"erreur")+")."}
 async function toggleRole(id,role){const L=accounts().map(a=>({...a,roles:{...a.roles}}));const a=L.find(x=>x.id===id);if(!a)return;a.roles[role]=!a.roles[role];
- window.KACCS=L;try{await KP.connect(a);saveAccounts(L);GCAL.by={};U.mails=null;U.bkLoaded=false;toast(a.roles[role]?(role==="mail"?PROV[a.prov].mail:PROV[a.prov].bk)+" activé":"Désactivé");if(role==="backup"&&a.roles.backup)snapCloud(a,true).then(ok=>ok&&toast("Première sauvegarde "+PROV[a.prov].bk+" faite ✓")).catch(()=>{})}
+ window.KACCS=L;try{await KP.connect(a);saveAccounts(L);GCAL.by={};U.mails=null;U.bkLoaded=false;toast(a.roles[role]?(role==="mail"?PROV[a.prov].mail:role==="fiches"?"Fiches":PROV[a.prov].bk)+" activé":"Désactivé");if(role==="fiches"){U.fi.files=null;U.fi.err=null;U.fi.at=null}if(role==="backup"&&a.roles.backup)snapCloud(a,true).then(ok=>ok&&toast("Première sauvegarde "+PROV[a.prov].bk+" faite ✓")).catch(()=>{})}
  catch(e){kgSync();toast(accErr(e),null,"danger",8000)}}
 /* --- connexion à Kennach avec Microsoft --- */
 function linkedProviders(){const u=window.KUSER;return u&&u.providerData?u.providerData.map(p=>p.providerId):[]}
@@ -2419,7 +2428,7 @@ async function linkMicrosoft(){try{const p=new firebase.auth.OAuthProvider("micr
 /* --- cartes Réglages --- */
 function saCards(){if(!U.bkLoaded&&ST.mode==="db")setTimeout(loadBk,0);const L=accounts();const cf=window.KCFG||{};
  const row=a=>{const P=PROV[a.prov],ok=KP.valid(a);return `<div class="acc"><div class="acc-h"><span class="acc-ic">${P.ic}</span><div class="acc-t"><b>${esc(a.email||P.n)}</b><span class="${ok?"okc":"warnc"}">${ok?"● connecté":"○ à reconnecter au prochain clic"}</span></div>${ok?"":`<button class="btn" data-act="acon" data-id="${a.id}">Reconnecter</button>`}<button class="tool" data-act="adel" data-id="${a.id}" title="Retirer ce compte">Retirer</button></div>
-  <div class="acc-r"><button class="chipb ${a.roles.mail?"on":""}" data-act="arole" data-id="${a.id}" data-role="mail">✉︎ ${P.mail}</button><button class="chipb ${a.roles.backup?"on":""}" data-act="arole" data-id="${a.id}" data-role="backup">☁︎ Sauvegarde ${P.bk}</button></div></div>`};
+  <div class="acc-r"><button class="chipb ${a.roles.mail?"on":""}" data-act="arole" data-id="${a.id}" data-role="mail">✉︎ ${P.mail}</button><button class="chipb ${a.roles.backup?"on":""}" data-act="arole" data-id="${a.id}" data-role="backup">☁︎ Sauvegarde ${P.bk}</button>${a.prov==="google"?`<button class="chipb ${a.roles.fiches?"on":""}" data-act="arole" data-id="${a.id}" data-role="fiches">📁 Fiches</button>`:""}</div></div>`};
  const lastFs=ST.settings.lastSnap?fmtDate(ST.settings.lastSnap+"T12:00:00"):"jamais";const lc=ST.settings.lastCloud||{};
  const linked=linkedProviders();
  return `<div class="card"><b>Comptes connectés</b><p class="cardsub">Google et Microsoft, pro ou perso, autant que tu veux. Pour chaque compte, choisis s'il sert aux mails et à l'agenda, à la sauvegarde, ou aux deux.</p>
@@ -2428,6 +2437,7 @@ function saCards(){if(!U.bkLoaded&&ST.mode==="db")setTimeout(loadBk,0);const L=a
  <p class="cardsub" style="margin-top:10px">Google : reconnexion d'un clic après 1 h. Microsoft : reste connecté 24 h.</p>
  <button class="tool" data-act="cfgt" style="margin-top:6px">${U.cfgOpen?"▾":"▸"} Identifiants techniques</button>${U.cfgOpen||!cf.google||!cf.ms?`<div class="cfgbox"><div class="lbl2">ID client Google (…apps.googleusercontent.com)</div><div class="frow"><input class="fld" id="gcid" style="flex:1" value="${esc(ST.settings.gClientId||"")}" placeholder="xxxx.apps.googleusercontent.com"><button class="btn" data-act="gcidsave">Enregistrer</button></div>
  <div class="lbl2">ID d'application Microsoft (Entra, 8-4-4-4-12)</div><div class="frow"><input class="fld" id="mcid" style="flex:1" value="${esc(ST.settings.msClientId||"")}" placeholder="00000000-0000-0000-0000-000000000000"><button class="btn" data-act="mcidsave">Enregistrer</button></div>
+ <div class="lbl2">Dossier des fiches (Google Drive)</div><div class="frow"><input class="fld" id="fifold" style="flex:1" value="${esc((ST.settings.fiches&&ST.settings.fiches.folder)||"risma-context")}"><button class="btn" data-act="fifoldsave">Enregistrer</button></div>
  <div class="sub" style="font-size:12px;margin-top:6px">Adresse de retour Microsoft à déclarer (Application monopage) : <code>${esc(KP.redirectUri())}</code></div></div>`:""}</div>
  <div class="card"><b>Ouvrir Kennach avec…</b><p class="cardsub">Le même carnet, quel que soit le compte utilisé pour te connecter.</p>
  <div class="frow"><span class="xchip">${PROV.google.ic}&nbsp;Google ${linked.includes("google.com")?"✓":""}</span><span class="xchip">${PROV.ms.ic}&nbsp;Microsoft ${linked.includes("microsoft.com")?"✓":""}</span>${linked.includes("microsoft.com")?"":`<button class="btn" data-act="mslink">Lier un compte Microsoft</button>`}</div></div>
@@ -2449,6 +2459,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
  if(a==="gcidsave"){const v=($("#gcid")||{}).value||"";if(!/\.apps\.googleusercontent\.com$/.test(v.trim()))return toast("ID Google invalide : il finit par .apps.googleusercontent.com");putSettings({gClientId:v.trim()});kgSync();return toast("ID Google enregistré")}
  if(a==="mcidsave"){const v=(($("#mcid")||{}).value||"").trim();if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v))return toast("ID Microsoft invalide : format 8-4-4-4-12.");putSettings({msClientId:v});kgSync();return toast("ID Microsoft enregistré")}
  if(a==="mslink")return linkMicrosoft();
+ if(a==="fifoldsave"){const v=(($("#fifold")||{}).value||"").trim();if(!v)return;putSettings({fiches:{...(ST.settings.fiches||{}),folder:v}});U.fi.files=null;U.fi.at=null;try{localStorage.removeItem(FCACHE_KEY)}catch(_){}return toast("Dossier enregistré")}
  if(a==="macc"){U.mailAcc=id;U.mails=null;U.mail=null;kgSync();return render()}
  if(a==="bknow")return backupNow();
  if(a==="rfs")return restoreFrom("fs",id);
@@ -2460,6 +2471,84 @@ window.addEventListener("online",()=>{setSync();toast("De retour en ligne : sync
 /* --- démarrage --- */
 {const _al=afterLoad;afterLoad=function(){_al();migrateAccounts();kgSync();setTimeout(autoBackup,15000);setInterval(autoBackup,3*3600e3);
  if(/iPhone|iPad/.test(navigator.userAgent)&&!navigator.standalone&&!ST.settings.iosHint){toast("Astuce : Partager › « Sur l'écran d'accueil » pour installer Kennach.",null,"",8000);putSettings({iosHint:true})}}}
+
+/* ================= Fiches (dossier de fiches dans Google Drive) ================= */
+const FCACHE_KEY="kfiches_cache";
+U.fi={files:null,busy:false,err:null,open:null,txt:{},q:"",cat:null};
+const fiAcc=()=>accounts().find(a=>a.prov==="google"&&a.roles&&a.roles.fiches)||null;
+const fiFolder=()=>(ST.settings.fiches&&ST.settings.fiches.folder)||"risma-context";
+function fiLoadCache(){try{const c=JSON.parse(localStorage.getItem(FCACHE_KEY)||"null");if(c&&c.folder===fiFolder()){U.fi.files=c.files;U.fi.txt=c.txt||{};U.fi.at=c.at}}catch(e){}}
+function fiSaveCache(){try{localStorage.setItem(FCACHE_KEY,JSON.stringify({folder:fiFolder(),files:U.fi.files,txt:U.fi.txt,at:U.fi.at}))}catch(e){try{localStorage.setItem(FCACHE_KEY,JSON.stringify({folder:fiFolder(),files:U.fi.files,txt:{},at:U.fi.at}))}catch(_){}}}
+const fiClean=t=>String(t||"").replace(/\r/g,"").replace(/\\([-_.#*()\[\]!>`|+~])/g,"$1").replace(/\*\*([^*\n]+)\*\*/g,"$1").replace(/\n{3,}/g,"\n\n").replace(/^[ \t]+$/gm,"").trim();
+const isSession=f=>/^(\d{4}-\d{2}-\d{2}\s*-\s*)?Session\b/i.test(f.name);
+const isFiche=f=>!isSession(f)&&/^(0\d|Scripts|Fiche|⭐)/.test(f.name)&&!/archive|ancienne version/i.test(f.name)&&!/ - Référence$/.test(f.name);
+async function fiRefresh(force){const a=fiAcc();if(!a){U.fi.err="no_acc";return render()}if(U.fi.busy)return;U.fi.busy=true;U.fi.err=null;render();
+ try{const L=await KP.fiches.list(a,fiFolder());const old={};(U.fi.files||[]).forEach(f=>old[f.id]=f.modifiedTime);U.fi.files=L.map(f=>({id:f.id,name:f.name,mimeType:f.mimeType,modifiedTime:f.modifiedTime,url:f.webViewLink}));
+  for(const id of Object.keys(U.fi.txt))if(!L.some(f=>f.id===id&&f.modifiedTime===old[id]))delete U.fi.txt[id];
+  const som=L.find(f=>/^00 - SOMMAIRE/.test(f.name));if(som&&!U.fi.txt[som.id])U.fi.txt[som.id]=fiClean(await KP.fiches.text(a,som));
+  U.fi.at=nowIso();fiSaveCache()}catch(e){U.fi.err=e.code==="not_found"?"Dossier « "+fiFolder()+" » introuvable dans ce compte.":accErr(e)}
+ U.fi.busy=false;render()}
+async function fiText(f){if(U.fi.txt[f.id])return U.fi.txt[f.id];const a=fiAcc();if(!a)return"";const t=fiClean(await KP.fiches.text(a,f));U.fi.txt[f.id]=t;fiSaveCache();return t}
+/* sommaire : catégories, mots-clés, état */
+function fiSommaire(){const som=(U.fi.files||[]).find(f=>/^00 - SOMMAIRE/.test(f.name));const t=som&&U.fi.txt[som.id];if(!t)return null;const cats=[];let cur=null;
+ t.split("\n").forEach(l=>{const h=l.match(/^#{3,4}\s*(.+?)\s*$/);if(h){cur={name:h[1].replace(/[*#]/g,"").trim(),items:[]};cats.push(cur);return}
+  const m=l.match(/^\s*[-*]\s+(.+)$/);if(m&&cur&&m[1].includes("|")){const p=m[1].split("|").map(x=>x.trim());cur.items.push({title:p[0],kw:p[1]||"",etat:p.slice(2).join(" | ")})}});
+ return cats.filter(c=>c.items.length&&!/ne pas lire|sans fiche/i.test(c.name))}
+const nn=s=>norm(String(s||"")).replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
+function fiGroups(){const F=(U.fi.files||[]).filter(isFiche).filter(f=>!/^00 - (SOMMAIRE|GUIDE)|^⭐/.test(f.name));const S=fiSommaire();const used=new Set();const groups=[];
+ if(S)S.forEach(c=>{const items=[];c.items.forEach(it=>{const f=F.find(x=>!used.has(x.id)&&(nn(x.name)===nn(it.title)||nn(x.name).startsWith(nn(it.title).slice(0,40))));if(f){used.add(f.id);items.push({...f,kw:it.kw,etat:it.etat})}});if(items.length)groups.push({name:c.name,items})});
+ const rest=F.filter(f=>!used.has(f.id));if(rest.length){const by={};rest.forEach(f=>{const k=(f.name.match(/^\d\d - ([^-]+)/)||[])[1]||"Autres";(by[k.trim()]=by[k.trim()]||[]).push(f)});Object.entries(by).forEach(([k,v])=>groups.push({name:k,items:v}))}
+ return groups}
+const fiRef=f=>(U.fi.files||[]).find(x=>x.name===f.name+" - Référence");
+function fiJournals(f){const words=nn((f.kw||"")+" "+f.name.replace(/^\d\d - /,"")).split(" ").filter(w=>w.length>3&&!/^(infra|fiche|siege|risma|etat|avec|pour|dans)$/.test(w));
+ const core=nn(f.name.replace(/^\d\d - /,"").replace(/^(Infra|Budget|Audit|Parc PC|Charte RISMA|Workspace|Méthode|Oracle Fusion) - /i,"")).split(" ").slice(0,2).join(" ");
+ return(U.fi.files||[]).filter(isSession).map(s=>{const t=nn(s.name);return{s,sc:words.filter(w=>t.includes(w)).length+(core.length>4&&t.includes(core)?2:0)}}).filter(x=>x.sc>=2||x.sc>=1&&words.length<=3).sort((a,b)=>b.s.modifiedTime.localeCompare(a.s.modifiedTime)).slice(0,10).map(x=>x.s)}
+/* résumé = les parties « fiche courte » : mise à jour, à reprendre, à faire */
+function fiSection(t,re){const L=t.split("\n");let i=L.findIndex(l=>re.test(l.replace(/[#*_]/g,"").trim()));if(i<0)return"";const out=[];for(let k=i+1;k<L.length;k++){const l=L[k];const plain=l.replace(/[#*_]/g,"").trim();if(/^#{1,4}\s/.test(l)||(/^[A-ZÀÂÉÈÊÎÔÛÇ' ]{5,}$/.test(plain)&&plain.length<40))break;out.push(l)}return out.join("\n").trim()}
+function fiSummary(t){const maj=(t.match(/(Dernière mise à jour|Mise à jour|MAJ)\s*:?\s*([0-9]{4}-[0-9]{2}-[0-9]{2})/i)||[])[2]||"";
+ const rep=fiSection(t,/^À REPRENDRE EN PREMIER/i),todo=fiSection(t,/^À FAIRE/i),etat=fiSection(t,/^ÉTAT ACTUEL/i);
+ if(!rep&&!todo&&!etat)return{maj,txt:t.split("\n").filter(l=>l.trim()).slice(0,10).join("\n"),todo:""};
+ const cut=s=>s.split("\n").filter(l=>l.trim()).slice(0,8).join("\n");
+ return{maj,txt:[rep?"**À reprendre en premier**\n"+cut(rep):"",etat?"**État actuel**\n"+cut(etat):""].filter(Boolean).join("\n\n"),todo}}
+function fiTodoLines(todo){return String(todo||"").split("\n").map(l=>l.replace(/^\s*(\d+[.)]|[-*•])\s*/,"").trim()).filter(l=>l.length>4&&!/^(aucun|rien)/i.test(l)).slice(0,20)}
+function fiTasks(f,todo){const L=fiTodoLines(todo);if(!L.length)return toast("Aucune ligne dans « À FAIRE ».");const cat=(fiGroups().find(g=>g.items.some(x=>x.id===f.id))||{}).name||"Fiches";
+ let s=spaces().find(x=>norm(x.name)===norm("RISMA · "+cat));if(!s){s={id:nid("s"),name:"RISMA · "+cat,kind:"area",color:"#007AFF",goal:"",createdAt:nowIso()};putSpace(s)}
+ const exist=new Set(items().filter(i=>i.ficheId===f.id).map(i=>norm(i.title)));const made=[];
+ L.forEach(l=>{if(exist.has(norm(l.slice(0,200))))return;const t=newItem({type:"task",status:"todo",title:l.slice(0,200),body:"Depuis la fiche « "+f.name+" »\n"+(f.url||""),space:s.id,tags:["fiche"],ficheId:f.id,src:"fiche"});putItem(t);made.push(t.id)});
+ toast(made.length?made.length+" tâche(s) créée(s) dans "+s.name:"Déjà toutes dans Kennach",made.length?()=>made.forEach(id=>hardDelete("items",id)):null,"",6000)}
+function fiSeen(f){const seen=(ST.settings.fiches&&ST.settings.fiches.seen)||{};return !seen[f.id]||seen[f.id]<f.modifiedTime}
+function fiMarkSeen(f){const cur=ST.settings.fiches||{};putSettings({fiches:{...cur,seen:{...(cur.seen||{}),[f.id]:f.modifiedTime}}})}
+/* vue liste */
+V.fiches=()=>{if(U.fi.files===null)fiLoadCache();const a=fiAcc();
+ if(a&&!U.fi.busy&&!U.fi.err&&(U.fi.files===null||!U.fi.at||Date.now()-new Date(U.fi.at)>15*60e3))setTimeout(()=>fiRefresh(false),0);
+ if(U.fi.open)return fiDetail();
+ const head=`<div class="hdr"><div><h1>Fiches</h1><div class="sub">${a?`Dossier « ${esc(fiFolder())} » · ${esc(a.email)}${U.fi.at?" · à jour "+hm(new Date(U.fi.at)):""}`:"Tes fiches de travail, à jour à chaque session."}</div></div><div class="act">${a?`<button class="btn" data-act="firef" ${U.fi.busy?"disabled":""}>${U.fi.busy?"…":"↻"}</button>`:""}</div></div>`;
+ if(!a)return head+`<div class="card"><b>Brancher tes fiches</b><p class="cardsub">Kennach lit ton dossier de fiches dans Google Drive (lecture seule) : chaque sujet avec son résumé, le détail et les journaux de session.</p><div class="frow"><button class="btn pri" data-nav="settings">Réglages › Comptes connectés</button></div><p class="cardsub" style="margin-top:8px">Sur le compte qui contient le dossier, allume « 📁 Fiches ».</p></div>`;
+ if(U.fi.err&&!U.fi.files)return head+`<div class="banner err">${esc(U.fi.err==="no_acc"?"Aucun compte avec « Fiches »":U.fi.err)}</div>`;
+ if(!U.fi.files)return head+skel();
+ const G=fiGroups();const q=nn(U.fi.q);const nNew=G.reduce((s,g)=>s+g.items.filter(fiSeen).length,0);
+ return head+(U.fi.err?`<div class="banner">${esc(U.fi.err)} (copie locale affichée)</div>`:"")+`<div class="cap" style="margin-bottom:14px"><input class="fld" id="fiq" style="background:none;padding:0" placeholder="Chercher un sujet, un mot-clé…" value="${esc(U.fi.q)}"></div>
+ ${nNew?`<div class="sub" style="margin:-4px 4px 10px">● ${nNew} fiche(s) modifiée(s) depuis ta dernière lecture</div>`:""}
+ ${G.map(g=>{const its=g.items.filter(f=>!q||nn(f.name+" "+(f.kw||"")).includes(q));if(!its.length)return"";return `<div class="grp">${esc(g.name)} <span class="n">${its.length}</span></div><div class="list">${its.map(f=>`<button class="firow" data-fiopen="${f.id}"><div class="fi-t"><b>${fiSeen(f)?'<span class="fdot"></span>':""}${esc(f.name.replace(/^\d\d - /,""))}</b><span>${esc(f.etat||f.kw||"")}</span></div><small>${fmtDate(f.modifiedTime)}</small></button>`).join("")}</div>`}).join("")}
+ <div class="grp">Journaux de session récents</div><div class="list">${(U.fi.files||[]).filter(isSession).slice(0,8).map(s=>`<a class="firow" href="${esc(s.url)}" target="_blank" rel="noopener"><div class="fi-t"><b>${esc(s.name.replace(/^Session\s*/,""))}</b></div><small>${fmtDate(s.modifiedTime)}</small></a>`).join("")}</div>`};
+/* vue détail */
+function fiDetail(){const f=(U.fi.files||[]).find(x=>x.id===U.fi.open);if(!f){U.fi.open=null;return V.fiches()}
+ const g=fiGroups();const meta=g.flatMap(x=>x.items).find(x=>x.id===f.id)||f;const t=U.fi.txt[f.id];const ref=fiRef(f);const J=fiJournals(meta);
+ if(!t)setTimeout(()=>fiText(f).then(()=>{fiMarkSeen(f);render()}).catch(e=>{U.fi.err=accErr(e);render()}),0);
+ const S=t?fiSummary(t):null;const tab=U.fi.tab||"resume";
+ return `<div class="hdr"><div><button class="tool" data-fiopen="" style="margin-bottom:8px">‹ Fiches</button><h1 style="font-size:28px;line-height:34px">${esc(f.name.replace(/^\d\d - /,""))}</h1><div class="sub">${esc(meta.etat||"")}${S&&S.maj?" · mise à jour "+fmtDate(S.maj+"T12:00:00"):""}</div></div><div class="act"><a class="btn" href="${esc(f.url||"#")}" target="_blank" rel="noopener">Ouvrir dans Docs</a></div></div>
+ <div class="seg" style="margin-bottom:14px"><button class="${tab==="resume"?"on":""}" data-fitab="resume">Résumé</button><button class="${tab==="detail"?"on":""}" data-fitab="detail">Fiche complète</button>${ref?`<button class="${tab==="ref"?"on":""}" data-fitab="ref">Référence</button>`:""}<button class="${tab==="jr"?"on":""}" data-fitab="jr">Journaux (${J.length})</button></div>
+ ${!t?skel():tab==="resume"?`<div class="card"><div class="mdv">${md(S.txt)}</div></div>${S.todo?`<div class="card"><b>À faire</b><div class="mdv" style="margin-top:6px">${md(fiTodoLines(S.todo).map(l=>"- "+l).join("\n"))}</div><div class="frow" style="margin-top:12px"><button class="btn pri" data-act="fitasks">+ Mettre dans mes tâches</button></div></div>`:""}${meta.kw?`<div class="pick">${meta.kw.split(",").map(k=>k.trim()).filter(Boolean).slice(0,14).map(k=>`<span class="tool">${esc(k)}</span>`).join("")}</div>`:""}`
+ :tab==="detail"?`<div class="card"><div class="mdv">${md(t,{toc:true})}</div></div>`
+ :tab==="ref"?(U.fi.txt[ref.id]?`<div class="card"><div class="mdv">${md(U.fi.txt[ref.id],{toc:true})}</div></div>`:(setTimeout(()=>fiText(ref).then(render),0),skel()))
+ :`<div class="list">${J.map(s=>`<a class="firow" href="${esc(s.url)}" target="_blank" rel="noopener"><div class="fi-t"><b>${esc(s.name.replace(/^Session\s*/,""))}</b></div><small>${fmtDate(s.modifiedTime)}</small></a>`).join("")||'<div class="empty" style="padding:14px">Aucun journal trouvé pour ce sujet.</div>'}</div>`}`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-fiopen],[data-fitab],[data-act=firef],[data-act=fitasks]");if(!t)return;const d=t.dataset;
+ if(d.fiopen!==undefined){U.fi.open=d.fiopen||null;U.fi.tab="resume";render();const m=$("#main");if(m)m.scrollTop=0;return}
+ if(d.fitab){U.fi.tab=d.fitab;return render()}
+ if(d.act==="firef"){U.fi.txt={};return fiRefresh(true)}
+ if(d.act==="fitasks"){const f=(U.fi.files||[]).find(x=>x.id===U.fi.open);const t=f&&U.fi.txt[f.id];if(t)fiTasks(f,fiSummary(t).todo);return}});
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="fiq"){U.fi.q=e.target.value;const p=e.target.selectionStart;render();const n=$("#fiq");if(n){n.focus();try{n.setSelectionRange(p,p)}catch(_){}}}});
+
 {const _r=render;render=function(){if(ST.settings)kgSync();_r()}}
 
 document.body.classList.add("sa");
