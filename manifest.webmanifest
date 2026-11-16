@@ -25,5 +25,38 @@
    "type": "image/png",
    "purpose": "maskable"
   }
+ ],
+ "shortcuts": [
+  {
+   "name": "Capturer",
+   "short_name": "Capturer",
+   "url": "./?cap=",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Fiches",
+   "url": "./#fiches",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  },
+  {
+   "name": "Calendrier",
+   "url": "./#cal",
+   "icons": [
+    {
+     "src": "icon-192.png",
+     "sizes": "192x192"
+    }
+   ]
+  }
  ]
 }

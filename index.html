@@ -21,7 +21,7 @@
  var LS=function(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem("kp_"+k)||"null");if(v===null)localStorage.removeItem("kp_"+k);else localStorage.setItem("kp_"+k,JSON.stringify(v))}catch(e){return null}};
  function active(){try{return !!(navigator.userActivation&&navigator.userActivation.isActive)}catch(e){return false}}
  function E(code,msg,extra){var e={code:code,message:msg||code};if(extra)for(var k in extra)e[k]=extra[k];return e}
- var SC={google:{mail:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly"],backup:["https://www.googleapis.com/auth/drive.file"],fiches:["https://www.googleapis.com/auth/drive.readonly"],base:["email"]},
+ var SC={google:{mail:["https://www.googleapis.com/auth/gmail.readonly","https://www.googleapis.com/auth/gmail.compose","https://www.googleapis.com/auth/calendar.readonly"],backup:["https://www.googleapis.com/auth/drive.file"],fiches:["https://www.googleapis.com/auth/drive.readonly","https://www.googleapis.com/auth/documents"],base:["email"]},
          ms:{mail:["Mail.ReadWrite","Calendars.Read"],backup:["Files.ReadWrite.AppFolder"],base:["openid","profile","email","offline_access","User.Read"]}};
  function scopes(acc){var s=SC[acc.prov];var o=s.base.slice();if(acc.roles&&acc.roles.mail)o=o.concat(s.mail);if(acc.roles&&acc.roles.backup)o=o.concat(s.backup);if(acc.roles&&acc.roles.fiches&&s.fiches)o=o.concat(s.fiches);return o}
  function cfg(){return window.KCFG||{}}
@@ -134,17 +134,17 @@
    return{id:"m_"+e.id,summary:e.subject,status:e.isCancelled?"cancelled":"confirmed",start:st,end:en,location:e.location&&e.location.displayName||"",conferenceUrl:e.onlineMeeting&&e.onlineMeeting.joinUrl||"",htmlLink:e.webLink,attendees:att,description:e.bodyPreview||"",eventType:e.showAs==="oof"?"OUT_OF_OFFICE":"DEFAULT"}})})}
  /* ---------- Sauvegardes ---------- */
  var gdrive={F:"Kennach - Sauvegardes",D:"https://www.googleapis.com/drive/v3/files",
-  folder:function(acc){var k="gfolder_"+acc.id,f=LS(k),D=this.D,F=this.F;if(f)return Promise.resolve(f);
-   return api(acc,D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+F+"' and trashed=false")+"&fields=files(id)").then(function(j){if(j.files&&j.files[0]){LS(k,j.files[0].id);return j.files[0].id}
-    return api(acc,D+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:F,mimeType:"application/vnd.google-apps.folder"})}).then(function(x){LS(k,x.id);return x.id})})},
-  save:function(acc,name,text){var self=this;return this.folder(acc).then(function(fid){var B="kb"+Math.random().toString(36).slice(2);var body="--"+B+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:name,parents:[fid],mimeType:"application/json"})+"\r\n--"+B+"\r\nContent-Type: application/json\r\n\r\n"+text+"\r\n--"+B+"--";
+  fp:{},folder:function(acc){var k="gfolder_"+acc.id,f=LS(k),D=this.D,F=this.F,self=this;if(f)return Promise.resolve(f);if(self.fp[acc.id])return self.fp[acc.id];var P=(function(){
+   return api(acc,D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+F+"' and trashed=false")+"&orderBy=createdTime&fields=files(id)").then(function(j){if(j.files&&j.files[0]){LS(k,j.files[0].id);return j.files[0].id}
+    return api(acc,D+"?fields=id",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:F,mimeType:"application/vnd.google-apps.folder"})}).then(function(x){LS(k,x.id);return x.id})})})();self.fp[acc.id]=P;P.then(function(){delete self.fp[acc.id]},function(){delete self.fp[acc.id]});return P},
+  save:function(acc,name,text,mime){mime=mime||"application/json";var self=this;return this.folder(acc).then(function(fid){var B="kb"+Math.random().toString(36).slice(2);var body="--"+B+"\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n"+JSON.stringify({name:name,parents:[fid],mimeType:mime})+"\r\n--"+B+"\r\nContent-Type: "+mime+"; charset=UTF-8\r\n\r\n"+text+"\r\n--"+B+"--";
    return api(acc,"https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",{method:"POST",headers:{"Content-Type":"multipart/related; boundary="+B},body:body})}).catch(function(e){if(e&&e.code==="not_found")LS("gfolder_"+acc.id,null);throw e})},
   list:function(acc){var D=this.D;return this.folder(acc).then(function(fid){return api(acc,D+"?q="+encodeURIComponent("'"+fid+"' in parents and trashed=false")+"&orderBy=createdTime desc&pageSize=60&fields=files(id,name,size,createdTime)").then(function(j){return(j.files||[]).map(function(f){return{id:f.id,name:f.name,size:+f.size||0,at:f.createdTime}})})})},
   get:function(acc,id){return api(acc,this.D+"/"+id+"?alt=media",{raw:true}).then(function(r){return r.text()})},
   del:function(acc,id){return api(acc,this.D+"/"+id,{method:"DELETE"})}};
  var onedrive={
-  save:function(acc,name,text){return api(acc,GR+"drive/special/approot:/"+encodeURIComponent(name)+":/content",{method:"PUT",headers:{"Content-Type":"application/json"},body:text})},
-  list:function(acc){return api(acc,GR+"drive/special/approot/children?$select=id,name,size,createdDateTime&$top=100").then(function(j){return(j.value||[]).filter(function(f){return/\.json$/.test(f.name)}).sort(function(a,b){return new Date(b.createdDateTime)-new Date(a.createdDateTime)}).map(function(f){return{id:f.id,name:f.name,size:f.size||0,at:f.createdDateTime}})})},
+  save:function(acc,name,text,mime){return api(acc,GR+"drive/special/approot:/"+encodeURIComponent(name)+":/content",{method:"PUT",headers:{"Content-Type":mime||"application/json"},body:text})},
+  list:function(acc){return api(acc,GR+"drive/special/approot/children?$select=id,name,size,createdDateTime&$top=100").then(function(j){return(j.value||[]).filter(function(f){return/\.(json|md)$/.test(f.name)}).sort(function(a,b){return new Date(b.createdDateTime)-new Date(a.createdDateTime)}).map(function(f){return{id:f.id,name:f.name,size:f.size||0,at:f.createdDateTime}})})},
   get:function(acc,id){return api(acc,GR+"drive/items/"+id+"/content",{raw:true}).then(function(r){return r.text()})},
   del:function(acc,id){return api(acc,GR+"drive/items/"+id,{method:"DELETE"})}};
  /* ---------- Fiches (dossier Google Drive, lecture seule) ---------- */
@@ -152,7 +152,12 @@
   folderId:function(acc,name){var D=this.D;return api(acc,D+"?q="+encodeURIComponent("mimeType='application/vnd.google-apps.folder' and name='"+String(name).replace(/'/g,"\\'")+"' and trashed=false")+"&fields=files(id,name)&pageSize=5").then(function(j){if(!j.files||!j.files.length)throw E("not_found","Dossier « "+name+" » introuvable");return j.files[0].id})},
   list:function(acc,name){var D=this.D;return this.folderId(acc,name).then(function(fid){var out=[];function page(tok){return api(acc,D+"?q="+encodeURIComponent("'"+fid+"' in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'")+"&fields=nextPageToken,files(id,name,mimeType,modifiedTime,webViewLink,size)&pageSize=200&orderBy=modifiedTime desc"+(tok?"&pageToken="+encodeURIComponent(tok):"")).then(function(j){out=out.concat(j.files||[]);return j.nextPageToken&&out.length<1000?page(j.nextPageToken):out})}return page(null)})},
   text:function(acc,f){var D=this.D;if(f.mimeType==="application/vnd.google-apps.document")return api(acc,D+"/"+f.id+"/export?mimeType="+encodeURIComponent("text/markdown"),{raw:true}).then(function(r){return r.text()},function(){return api(acc,D+"/"+f.id+"/export?mimeType=text/plain",{raw:true}).then(function(r){return r.text()})});
-   if(/^text\//.test(f.mimeType))return api(acc,D+"/"+f.id+"?alt=media",{raw:true}).then(function(r){return r.text()});return Promise.resolve("")}};
+   if(/^text\//.test(f.mimeType))return api(acc,D+"/"+f.id+"?alt=media",{raw:true}).then(function(r){return r.text()});return Promise.resolve("")},
+  appendTodo:function(acc,docId,line){var U="https://docs.googleapis.com/v1/documents/"+docId;return api(acc,U+"?fields=body(content(startIndex,endIndex,paragraph(elements(textRun(content)),paragraphStyle(namedStyleType))))").then(function(d){
+   var P=(d.body&&d.body.content||[]).filter(function(c){return c.paragraph}).map(function(c){return{s:c.startIndex,e:c.endIndex,t:(c.paragraph.elements||[]).map(function(x){return x.textRun?x.textRun.content:""}).join("").trim(),h:/HEADING|TITLE/.test(c.paragraph.paragraphStyle&&c.paragraph.paragraphStyle.namedStyleType||"")}});
+   var i=P.findIndex(function(p){return/^À FAIRE\b/i.test(p.t.replace(/[#*]/g,"").trim())});if(i<0)throw E("not_found","Section « À FAIRE » introuvable dans la fiche");
+   var last=P[i],n=0;for(var k=i+1;k<P.length;k++){var p=P[k];var up=p.t.replace(/[#*]/g,"").trim();if(p.h||(/^[A-ZÀÂÉÈÊÎÔÛÇ' ]{5,40}$/.test(up)))break;if(p.t){last=p;if(/^\d+[.)]/.test(p.t))n=Math.max(n,parseInt(p.t,10))}}
+   var txt=(n?(n+1)+". ":"- ")+line;return api(acc,U+":batchUpdate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({requests:[{insertText:{location:{index:last.e-1},text:"\n"+txt}}]})}).then(function(){return txt})})}};
  /* ---------- interface pour l'app ---------- */
  function accs(){return(window.KACCS||[]).filter(function(a){return a&&a.id&&a.prov})}
  function mailAcc(){var L=accs().filter(function(a){return a.roles&&a.roles.mail});var cur=L.find(function(a){return a.id===window.KMAILACC});return cur||L[0]||null}
@@ -160,7 +165,7 @@
   token:token,connect:function(acc){LS("tok_"+acc.id,null);return token(acc,true).then(function(){return acc})},
   forget:function(acc){var t=LS("tok_"+acc.id);LS("tok_"+acc.id,null);LS("gfolder_"+acc.id,null);try{if(t&&acc.prov==="google"&&window.google)google.accounts.oauth2.revoke(t.at,function(){})}catch(e){}},
   valid:function(acc){var t=LS("tok_"+acc.id);if(!t||t.sc!==scopes(acc).join(" "))return false;return t.exp>Date.now()+60000||(acc.prov==="ms"&&!!t.rt&&t.rtExp>Date.now())},
-  backup:{save:function(acc,n,t){return(acc.prov==="ms"?onedrive:gdrive).save(acc,n,t)},list:function(acc){return(acc.prov==="ms"?onedrive:gdrive).list(acc)},get:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).get(acc,id)},del:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).del(acc,id)}},
+  backup:{save:function(acc,n,t,m){return(acc.prov==="ms"?onedrive:gdrive).save(acc,n,t,m)},list:function(acc){return(acc.prov==="ms"?onedrive:gdrive).list(acc).then(function(L){return L.filter(function(f){return/\.json$/.test(f.name)})})},get:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).get(acc,id)},del:function(acc,id){return(acc.prov==="ms"?onedrive:gdrive).del(acc,id)}},
   mailAcc:mailAcc,redirectUri:redirectUri,fiches:fiches};
  window.KMCP={listTools:function(){return Promise.resolve({servers:[],fileArgs:false})},
   callTool:function(srv,tool,input){input=input||{};
@@ -763,6 +768,36 @@ body.sa.noai .redo,body.sa.noai .pick:has([data-redo]),body.sa.noai .histo .mlig
 body.sa.gw [data-nav=mails]{display:flex!important}
 .gacc{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--border)}
 .bkrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:8px 12px;font-size:13.5px;border-bottom:1px solid var(--border)}.bkrow:last-child{border-bottom:0}
+.ic2{flex:none;vertical-align:-3px}
+.qk .ic2{width:20px;height:20px}
+#kauthp{position:fixed;top:calc(10px + env(safe-area-inset-top));right:14px;z-index:90;display:flex;gap:6px;align-items:center;padding:8px 14px;border-radius:999px;background:var(--warn,#ff9f0a);color:#fff;font-weight:600;font-size:13.5px;box-shadow:var(--e3);border:0;cursor:pointer}
+.widg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0 0 14px}
+@media(max-width:820px){.widg{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px 14px;padding:2px 16px 6px;scrollbar-width:none}.widg::-webkit-scrollbar{display:none}.wg{flex:0 0 82%;scroll-snap-align:start}}
+.wg{background:var(--surface);border-radius:var(--r);box-shadow:var(--e1);padding:14px 16px;min-width:0}
+.wl{display:flex;gap:6px;align-items:center;font-size:12px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.wi{display:flex;gap:8px;align-items:center;width:100%;text-align:left;padding:5px 0;font-size:14.5px;background:none;border:0;color:inherit;cursor:pointer}
+.wi.dn{text-decoration:line-through;color:var(--text-3)}
+.wd{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}.wd.p{background:var(--danger,#ff3b30)}
+.wt{display:block;font-size:15px;font-weight:600;text-align:left;background:none;border:0;padding:0;color:inherit;cursor:pointer}
+.subt{flex:none;align-self:center;width:30px;height:30px;border-radius:8px;border:0;background:none;color:var(--text-3);display:grid;place-items:center;cursor:pointer;transition:transform .2s}
+.subt.on{transform:rotate(90deg);color:var(--accent)}
+.subl{padding:2px 16px 10px 52px;display:flex;flex-direction:column;gap:2px}
+.subi{display:flex;gap:10px;align-items:center;font-size:14px;padding:3px 0}.subi.on span{text-decoration:line-through;color:var(--text-3)}
+.subi .cbx{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text-3);background:none;font-size:11px;display:grid;place-items:center;color:#fff;cursor:pointer;padding:0}.subi .cbx.on{background:var(--accent);border-color:var(--accent)}
+.mtag{font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;margin-right:6px;float:right}.mtag.ta{background:color-mix(in srgb,var(--wait,#ff9f0a) 18%,transparent);color:var(--wait,#c27400)}.mtag.ti{background:var(--surface-2);color:var(--text-2)}
+.strow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-bottom:.5px solid var(--border)}.strow:last-child{border-bottom:0}
+.std{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}.std.ok{background:#34c759}.std.ko{background:#ff3b30}.std.wa{background:#ff9f0a}
+.fichip{display:inline-flex;gap:6px;align-items:center;margin:0 0 14px;padding:7px 12px;border-radius:999px;border:0;background:var(--surface-2);color:var(--text);font-size:13.5px;cursor:pointer}
+.linkb{color:var(--accent)}
+#drawer.full{width:100vw!important;max-width:100vw!important;left:0;right:0}
+#drawer.full .db{max-width:820px;margin:0 auto;width:100%}
+#drawer.full #edb{font-size:17px;line-height:1.7;min-height:70vh}
+body[data-view=fiches] .mdv{max-width:72ch;font-size:16.5px;line-height:1.65}
+@media(min-width:821px){body.sidecol .app{grid-template-columns:64px 1fr}body.sidecol .side .lbl,body.sidecol .side .ct,body.sidecol .side .sec,body.sidecol .side .foot span,body.sidecol .brand span,body.sidecol .capbtn span,body.sidecol .capbtn kbd{display:none}body.sidecol .nav{justify-content:center;padding:10px}body.sidecol .brand{justify-content:center;flex-direction:column}}
+.sidebtn{margin-left:auto;background:none;border:0;color:var(--text-3);cursor:pointer;padding:4px;border-radius:6px}
+@media(max-width:820px){.sidebtn{display:none}#mtop b{transition:opacity .2s}body:not(.scrolled) #mtop b{opacity:0}body.scrolled #mtop b{opacity:1}}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.18s}
+
 body.sa [data-nav=mails],body.sa [data-nav=veille],body.sa [data-nav=photo],body.sa [data-nav=ask],body.sa [data-nav=import],body.sa [data-act=askact]{display:none!important}
 </style>
 </head>
@@ -958,13 +993,13 @@ function guess(i){
 
 /* ================= état UI + navigation ================= */
 const U={view:"today",space:null,person:null,sel:null,jday:0,meet:null,edMode:{}};
-const VIEWS=["tasks","today","inbox","tri","upcoming","waiting","carnet","journal","decisions","meeting","search","settings","trash","ask","photo","mails","veille","review","import","cal","fiches"];
+const VIEWS=["tasks","today","inbox","tri","upcoming","waiting","carnet","journal","decisions","meeting","search","settings","trash","ask","photo","mails","veille","review","import","cal","fiches","etat"];
 function nav(v,arg){if($("#drawer").classList.contains("on"))closeDrawer();if($("#pal").classList.contains("on"))closePal();U.view=v;if(v==="space")U.space=arg;if(v==="person")U.person=arg;
  if(VIEWS.includes(v)){try{history.replaceState(null,"","#"+v)}catch(e){}}
  render();const m=$("#main");if(m)m.scrollTop=0}
 let rq=false;function schedule(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 const counts=()=>{const a=items();return{inbox:a.filter(i=>i.status==="inbox").length,wait:a.filter(i=>i.status==="waiting").length,late:a.filter(i=>open_(i)&&i.due&&diffD(i.due)<0&&i.status!=="someday").length}};
-const V_TITLE={today:"",inbox:"· Boîte",tri:"· Trier",tasks:"· Mes tâches",upcoming:"· À venir",waiting:"· En attente",carnet:"· Carnet",space:"· Espace",person:"· Personne",journal:"· Journal",decisions:"· Décisions",meeting:"· Réunion",search:"· Chercher",settings:"· Réglages",trash:"· Corbeille",ask:"· Demande",photo:"· Photo",mails:"· Mails",veille:"· Veille",review:"· Revue",import:"· Import",cal:"· Calendrier",fiches:"· Fiches"};
+const V_TITLE={today:"",inbox:"· Boîte",tri:"· Trier",tasks:"· Mes tâches",upcoming:"· À venir",waiting:"· En attente",carnet:"· Carnet",space:"· Espace",person:"· Personne",journal:"· Journal",decisions:"· Décisions",meeting:"· Réunion",search:"· Chercher",settings:"· Réglages",trash:"· Corbeille",ask:"· Demande",photo:"· Photo",mails:"· Mails",veille:"· Veille",review:"· Revue",import:"· Import",cal:"· Calendrier",fiches:"· Fiches",etat:"· État"};
 const MORE_V=["fiches","cal","tasks","upcoming","waiting","search","ask","photo","mails","veille","journal","decisions","meeting","review","settings","trash","import"];
 function moreSheet(){
  const c=counts();const b=(v,ic,l,sub,badge)=>`<button class="sp" style="display:flex;gap:12px;align-items:center;padding:12px 14px" data-nav="${v}"><span class="ic" style="width:24px;height:24px">${ic}</span><div style="flex:1;min-width:0"><b style="font-size:15px">${l}</b><p style="margin:0">${sub}</p></div>${badge?`<span class="chip t-task">${badge}</span>`:""}</button>`;
@@ -2491,12 +2526,13 @@ async function fiRefresh(force){const a=fiAcc();if(!a){U.fi.err="no_acc";return 
 async function fiText(f){if(U.fi.txt[f.id])return U.fi.txt[f.id];const a=fiAcc();if(!a)return"";const t=fiClean(await KP.fiches.text(a,f));U.fi.txt[f.id]=t;fiSaveCache();return t}
 /* sommaire : catégories, mots-clés, état */
 function fiSommaire(){const som=(U.fi.files||[]).find(f=>/^00 - SOMMAIRE/.test(f.name));const t=som&&U.fi.txt[som.id];if(!t)return null;const cats=[];let cur=null;
- t.split("\n").forEach(l=>{const h=l.match(/^#{3,4}\s*(.+?)\s*$/);if(h){cur={name:h[1].replace(/[*#]/g,"").trim(),items:[]};cats.push(cur);return}
-  const m=l.match(/^\s*[-*]\s+(.+)$/);if(m&&cur&&m[1].includes("|")){const p=m[1].split("|").map(x=>x.trim());cur.items.push({title:p[0],kw:p[1]||"",etat:p.slice(2).join(" | ")})}});
+ t.split("\n").forEach(l=>{const raw=l.replace(/[*_]/g,"").trim();const h=raw.match(/^#{2,5}\s*(.+?)\s*$/);
+  if(h){const name=h[1].trim();if(/^(Fiches vivantes|Règles|R[eè]gles|00 - SOMMAIRE)/i.test(name)){cur=null;return}cur={name,items:[]};cats.push(cur);return}
+  if(!cur)return;const body=raw.replace(/^([-*•+]|\d+[.)])\s+/,"");if(!body.includes("|"))return;const p=body.split("|").map(x=>x.trim());if(p[0].length<4)return;cur.items.push({title:p[0],kw:p[1]||"",etat:p.slice(2).join(" | ")})});
  return cats.filter(c=>c.items.length&&!/ne pas lire|sans fiche/i.test(c.name))}
 const nn=s=>norm(String(s||"")).replace(/[^a-z0-9 ]/g," ").replace(/\s+/g," ").trim();
 function fiGroups(){const F=(U.fi.files||[]).filter(isFiche).filter(f=>!/^00 - (SOMMAIRE|GUIDE)|^⭐/.test(f.name));const S=fiSommaire();const used=new Set();const groups=[];
- if(S)S.forEach(c=>{const items=[];c.items.forEach(it=>{const f=F.find(x=>!used.has(x.id)&&(nn(x.name)===nn(it.title)||nn(x.name).startsWith(nn(it.title).slice(0,40))));if(f){used.add(f.id);items.push({...f,kw:it.kw,etat:it.etat})}});if(items.length)groups.push({name:c.name,items})});
+ if(S)S.forEach(c=>{const items=[];c.items.forEach(it=>{const a=nn(it.title);const f=F.find(x=>!used.has(x.id)&&(nn(x.name)===a||nn(x.name).startsWith(a.slice(0,36))||a.startsWith(nn(x.name).slice(0,36))));if(f){used.add(f.id);items.push({...f,kw:it.kw,etat:it.etat})}});if(items.length)groups.push({name:c.name,items})});
  const rest=F.filter(f=>!used.has(f.id));if(rest.length){const by={};rest.forEach(f=>{const k=(f.name.match(/^\d\d - ([^-]+)/)||[])[1]||"Autres";(by[k.trim()]=by[k.trim()]||[]).push(f)});Object.entries(by).forEach(([k,v])=>groups.push({name:k,items:v}))}
  return groups}
 const fiRef=f=>(U.fi.files||[]).find(x=>x.name===f.name+" - Référence");
@@ -2550,6 +2586,200 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 document.addEventListener("input",e=>{if(e.target&&e.target.id==="fiq"){U.fi.q=e.target.value;const p=e.target.selectionStart;render();const n=$("#fiq");if(n){n.focus();try{n.setSelectionRange(p,p)}catch(_){}}}});
 
 {const _r=render;render=function(){if(ST.settings)kgSync();_r()}}
+
+
+/* ================= v4 : 29 améliorations ================= */
+/* --- icônes (même style partout) --- */
+const IC=(p,s=18)=>`<svg class="ic2" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+const ICN={note:IC('<path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5"/><path d="M8 13h8M8 17h5"/>'),cal:IC('<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),inbox:IC('<path d="M3.5 13.5 6 5h12l2.5 8.5V19a1 1 0 0 1-1 1h-15a1 1 0 0 1-1-1z"/><path d="M3.5 13.5H9l1 2h4l1-2h5.5"/>'),cmd:IC('<path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/>'),
+ spark:IC('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>'),edit:IC('<path d="M4 20h4L19 9l-4-4L4 16z"/>'),pin:IC('<path d="M15 4l5 5-3 1-4 4 1 4-2 1-3-4-4 4M10 9l5 5"/>'),clip:IC('<path d="M20 11.5 12 19.5a5 5 0 0 1-7-7l8-8a3.3 3.3 0 0 1 4.7 4.7L9.6 17.3a1.7 1.7 0 0 1-2.4-2.4L15 7"/>'),
+ target:IC('<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/>'),hist:IC('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/>'),copy:IC('<rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>'),
+ sun:IC('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),folder:IC('<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>'),
+ mail:IC('<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>'),check:IC('<path d="m5 12 4.5 4.5L19 7"/>'),chev:IC('<path d="m9 6 6 6-6 6"/>',14),expand:IC('<path d="M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6"/>'),shield:IC('<path d="M12 3 5 6v6c0 4 3 7 7 9 4-2 7-5 7-9V6z"/>'),bell:IC('<path d="M6 16V11a6 6 0 1 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),side:IC('<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/>')};
+/* --- journal des erreurs (pour l'écran État) --- */
+U.errlog=(()=>{try{return JSON.parse(localStorage.getItem("k_errlog")||"[]")}catch(e){return[]}})();
+{const _t=toast;toast=function(msg,undo,cls,ms){if(cls==="danger"){U.errlog=[{at:nowIso(),msg:String(msg).slice(0,200)},...U.errlog].slice(0,25);try{localStorage.setItem("k_errlog",JSON.stringify(U.errlog))}catch(e){}}return _t(msg,undo,cls,ms)}}
+/* --- 2 : rappel de reconnexion, toujours visible quand il faut --- */
+function needAuth(){return accounts().filter(a=>a.prov==="google"&&(a.roles.mail||a.roles.fiches)&&!KP.valid(a))}
+function authPill(){let el=$("#kauthp");const L=ST.mode==="db"?needAuth():[];if(!L.length){el&&el.remove();return}
+ if(!el){el=document.createElement("button");el.id="kauthp";document.body.appendChild(el);el.onclick=async()=>{const a=needAuth()[0];if(!a)return authPill();try{await KP.connect(a);toast("Reconnecté : "+a.email);GCAL.err=null;U.mails=U.mails===null?null:U.mails;if(U.fi)U.fi.err=null;render()}catch(e){toast(accErr(e),null,"danger",7000)}authPill()}}
+ el.innerHTML=`${IC('<path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 21v-5h5"/>',16)} Reconnecter Google${L.length>1?" ("+L.length+")":""}`}
+setInterval(()=>{if(ST.mode==="db")authPill()},30000);
+/* --- 3 : modifications venues d'un autre appareil pendant l'écriture --- */
+U.edBase=null;
+{const _oi=openItem;openItem=function(id){_oi(id);const it=ST.items.get(id);if(!it)return;U.edBase={id,updatedAt:it.updatedAt,body:it.body||"",title:it.title};edExtras(it)}}
+{const _pi=putItem;putItem=function(it){const r=_pi(it);if(U.edBase&&it&&it.id===U.edBase.id)U.edBase={id:it.id,updatedAt:it.updatedAt,body:it.body||"",title:it.title};return r}}
+function checkConflict(){const b=U.edBase;if(!b||U.sel!==b.id||!$("#drawer").classList.contains("on"))return;const cur=ST.items.get(b.id);if(!cur||cur.updatedAt===b.updatedAt)return;
+ const ed=$("#edb"),et=$("#edt");const mine=ed?ed.value:b.body;const dirty=(ed&&ed.value!==b.body)||(et&&et.value!==b.title);
+ if(!dirty){U.edBase={id:b.id,updatedAt:cur.updatedAt,body:cur.body||"",title:cur.title};const keep=U.edMode[b.id];openItem(b.id);U.edMode[b.id]=keep;toast("Note mise à jour depuis un autre appareil");return}
+ if($("#kconf"))return;const bx=document.createElement("div");bx.id="kconf";bx.className="banner";bx.style.cssText="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center";
+ bx.innerHTML=`<span style="flex:1;min-width:200px"><b>Modifiée sur un autre appareil</b> pendant que tu écrivais.</span><button class="tool" data-act="kc_theirs">Prendre l'autre version</button><button class="tool" data-act="kc_mine">Garder la mienne</button>`;
+ const db=$("#drawer .db");db&&db.prepend(bx);U.conflict={theirs:cur,mine}}
+/* --- extras de l'éditeur : mail lié, réunion, plein écran --- */
+function edExtras(it){const foot=$("#drawer .edfoot");if(!foot)return;const add=h=>foot.insertAdjacentHTML("afterbegin",h);
+ add(`<button class="btn" data-act="edfull" title="Plein écran">${ICN.expand}</button>`);
+ if(it.mailUrl)add(`<a class="btn" href="${esc(it.mailUrl)}" target="_blank" rel="noopener">${ICN.mail} Ouvrir le mail</a>`);
+ if(it.type==="meeting"&&!it.closedAt)add(`<button class="btn pri" data-act="meetclose">${ICN.check} Clôturer la réunion</button>`);
+ if($("#drawer").classList.contains("full"))$("#drawer").classList.add("full")}
+/* --- 15 : tâche depuis un mail avec lien direct --- */
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest('[data-act="mail2task"]');if(!t||!U.mail)return;e.stopImmediatePropagation();const m=U.mail;
+ putItem(newItem({type:"task",status:"inbox",title:"Répondre : "+m.subject,body:"Mail de "+m.fromName,mailUrl:m.url||m.viewUrl||"",src:"mail"}));toast("Tâche ajoutée à la Boîte (avec le lien du mail)")},true);
+/* --- 16 : étapes dépliables dans les listes --- */
+U.subOpen=new Set();
+{const _row=row;row=function(i,opt){let h=_row(i,opt);const cs=checkStats(i.body);if(!cs.t)return h;const open=U.subOpen.has(i.id);
+ h=h.replace(/<\/div><\/div><\/div>$/,`</div><button class="subt ${open?"on":""}" data-sube="${i.id}" aria-label="Étapes">${ICN.chev}</button></div></div>`);
+ if(open){const L=String(i.body).split("\n");h+=`<div class="subl">${L.map((l,ix)=>{const m=l.match(/^\s*[-*]\s+\[( |x|X)\]\s*(.*)/);return m?`<label class="subi ${m[1]!==" "?"on":""}"><button class="cbx ${m[1]!==" "?"on":""}" data-cbrow="${i.id}|${ix}">${m[1]!==" "?"✓":""}</button><span>${esc(m[2])}</span></label>`:""}).join("")}</div>`}
+ return h}}
+document.addEventListener("click",e=>{const s=e.target.closest&&e.target.closest("[data-sube],[data-cbrow]");if(!s)return;e.stopPropagation();e.preventDefault();
+ if(s.dataset.sube){const id=s.dataset.sube;U.subOpen.has(id)?U.subOpen.delete(id):U.subOpen.add(id);return render()}
+ const [id,ix]=s.dataset.cbrow.split("|");toggleCheck(id,+ix);render()},true);
+/* --- 17 + 25 : Ma journée et widget d'accueil --- */
+function myDay(){const m=ST.settings.myday;return m&&m.date===ymd(new Date())?m.ids.filter(id=>ST.items.get(id)&&!ST.items.get(id).deletedAt):[]}
+function homeWidget(){const md=myDay();const nm=typeof nextMeeting==="function"&&ST.settings.calOn?nextMeeting():null;const fi=(U.fi&&U.fi.files||[]).filter(f=>isFiche(f)&&!/SOMMAIRE/i.test(f.name)).sort((x,y)=>new Date(y.modifiedTime)-new Date(x.modifiedTime))[0];
+ const pri=md.length?md.map(id=>ST.items.get(id)):items().filter(i=>i.type==="task"&&open_(i)&&i.status!=="inbox"&&(i.prio||(i.due&&diffD(i.due)<=0))).sort(byDue).slice(0,3);
+ const done=md.filter(id=>ST.items.get(id).status==="done").length;
+ return `<div class="widg"><div class="wg"><div class="wl">${ICN.target} ${md.length?`Ma journée · ${done}/${md.length}`:"Priorités"}</div>${pri.length?pri.map(i=>`<button class="wi ${i.status==="done"?"dn":""}" data-open="${i.id}"><span class="wd ${i.prio?"p":""}"></span>${esc(i.title)}</button>`).join(""):`<div class="sub" style="font-size:13px">Rien d'urgent.</div>`}
+ <div class="frow" style="margin-top:8px"><button class="tool" data-act="mdpick">${md.length?"Modifier":"Choisir ma journée"}</button>${md.length&&done<md.length?`<button class="tool" data-act="mdgo">Une par une →</button>`:""}</div></div>
+ <div class="wg"><div class="wl">${ICN.cal} Prochaine réunion</div>${nm?`<b class="wt">${hm(nm.start)} · ${esc(nm.title)}</b><div class="sub" style="font-size:13px">${esc(nm.loc||"")}</div><div class="frow" style="margin-top:8px"><button class="tool" data-evprep="${esc(nm.id)}">Préparer</button>${nm.meet?`<a class="tool" href="${esc(nm.meet)}" target="_blank" rel="noopener">Rejoindre</a>`:""}</div>`:`<div class="sub" style="font-size:13px">${ST.settings.calOn?"Plus de réunion aujourd'hui.":"Agenda non branché."}</div>`}</div>
+ <div class="wg"><div class="wl">${ICN.folder} Dernière fiche</div>${fi?`<button class="wt linkb" data-nav="fiches" data-fiopen2="${fi.id}">${esc(fi.name.replace(/^\d\d - /,""))}</button><div class="sub" style="font-size:13px">${fmtDate(fi.modifiedTime)}</div>`:`<div class="sub" style="font-size:13px">Ouvre « Fiches » une fois.</div>`}</div></div>`}
+{const _vt=V.today;V.today=()=>{let h=_vt();if(ST.mode!=="db"&&ST.mode!=="local")return h;if(U.fi&&U.fi.files===null&&typeof fiLoadCache==="function")fiLoadCache();
+ h=h.replace('<div class="card brief">',homeWidget()+'<div class="card brief">');return h.replace(/<button class="qk" data-act="daily">📓/,'<button class="qk" data-act="daily">'+ICN.note).replace(/<button class="qk" data-nav="cal">🗓/,'<button class="qk" data-nav="cal">'+ICN.cal).replace(/<button class="qk" data-nav="inbox">📥/,'<button class="qk" data-nav="inbox">'+ICN.inbox).replace(/<button class="qk" data-act="menu">⌘/,'<button class="qk" data-act="menu">'+ICN.cmd)}}
+function myDaySheet(){const cand=items().filter(i=>i.type==="task"&&open_(i)&&i.status!=="inbox"&&i.status!=="someday").sort((a,b)=>((a.due&&diffD(a.due)<=0)?0:1)-((b.due&&diffD(b.due)<=0)?0:1)||byDue(a,b)).slice(0,40);const sel=new Set(myDay());U.mdSel=sel;
+ $("#drawer").classList.add("qs");$("#drawer").innerHTML=`<div class="dh"><b>Ma journée : 3 à 5 tâches</b><button class="x" data-act="close">${I.x}</button></div><div class="db"><div class="plan">${cand.map(i=>`<label class="pa"><input type="checkbox" data-mdc="${i.id}" ${sel.has(i.id)?"checked":""}><span>${esc(i.title)}<small>${i.due?fmtDue(i.due):""}${sp(i.space)?" · "+esc(sp(i.space).name):""}</small></span></label>`).join("")||'<div class="sub">Aucune tâche ouverte.</div>'}</div><div style="margin-top:12px"><button class="btn pri" data-act="mdsave">Valider</button></div></div>`;
+ $("#drawer").classList.add("on");$("#scrim").classList.add("on")}
+document.addEventListener("change",e=>{const c=e.target.closest&&e.target.closest("[data-mdc]");if(!c)return;c.checked?U.mdSel.add(c.dataset.mdc):U.mdSel.delete(c.dataset.mdc);if(U.mdSel.size>5){U.mdSel.delete(c.dataset.mdc);c.checked=false;toast("5 au maximum : garde l'essentiel.")}});
+/* --- 19 : préparer une réunion --- */
+async function prepMeeting(id){let ev=null;Object.values(GCAL.by).forEach(m=>m.ev.forEach(e=>{if(e.id===id)ev=e}));if(!ev)return;
+ const words=nn(ev.title).split(" ").filter(w=>w.length>3);const emails=ev.att.map(a=>String(a.email||"").toLowerCase()).filter(Boolean);
+ const ppl=people().filter(p=>(p.email&&emails.includes(p.email.toLowerCase()))||ev.att.some(a=>a.name&&norm(a.name).includes(norm(p.name.split(" ")[0]))));
+ const tasks=items().filter(i=>open_(i)&&i.type==="task"&&((i.people||[]).some(x=>ppl.some(p=>p.id===x))||words.some(w=>nn(i.title).includes(w)))).slice(0,12);
+ if(U.fi&&U.fi.files===null&&typeof fiLoadCache==="function")fiLoadCache();
+ const fic=(U.fi&&U.fi.files||[]).filter(f=>isFiche(f)&&words.some(w=>nn(f.name).includes(w))).slice(0,4);
+ const draw=(mails)=>{$("#drawer").classList.remove("qs");$("#drawer").innerHTML=`<div class="dh"><b>Préparer · ${esc(ev.title)}</b><button class="x" data-act="close">${I.x}</button></div><div class="db">
+ <div class="sub">${hm(ev.start)}${ev.loc?" · "+esc(ev.loc):""}${ev.att.length?" · "+esc(ev.att.map(a=>a.name).join(", ")):""}</div>
+ <div class="lbl2">Fiches liées</div>${fic.length?`<div class="list">${fic.map(f=>`<button class="firow" data-nav="fiches" data-fiopen2="${f.id}"><div class="fi-t"><b>${esc(f.name.replace(/^\d\d - /,""))}</b></div><small>${fmtDate(f.modifiedTime)}</small></button>`).join("")}</div>`:'<div class="sub" style="font-size:13px">Aucune fiche trouvée sur ce sujet.</div>'}
+ <div class="lbl2">Tâches ouvertes liées</div>${listHTML(tasks)||'<div class="sub" style="font-size:13px">Aucune.</div>'}
+ <div class="lbl2">Mails récents avec les participants</div>${mails===null?skel():mails.length?`<div class="list">${mails.map(m=>`<a class="firow" href="${esc(m.url||"#")}" target="_blank" rel="noopener"><div class="fi-t"><b>${esc(m.subject)}</b><span>${esc(m.from)}</span></div><small>${m.date?fmtDate(m.date):""}</small></a>`).join("")}</div>`:'<div class="sub" style="font-size:13px">Aucun mail trouvé.</div>'}
+ <div class="edfoot"><button class="btn pri" data-evnote="${esc(ev.id)}">${ICN.note} Prendre des notes</button></div></div>`;$("#drawer").classList.add("on");$("#scrim").classList.add("on")};
+ draw(emails.length?null:[]);if(!emails.length)return;
+ try{const q=emails.slice(0,6).map(x=>"from:"+x+" OR to:"+x).join(" OR ")+" newer_than:30d";const r=await CAP.mcp.callTool("Gmail","search_threads",{query:q,pageSize:8});
+  const ms=((r.payload&&r.payload.threads)||[]).map(t=>{const m=(t.messages||[])[0]||{};return{subject:m.subject||"",from:(m.addressDisplayNames&&m.addressDisplayNames[0]&&m.addressDisplayNames[0].displayName)||m.sender||"",date:m.date,url:t.viewUrl}});draw(ms)}catch(e){draw([])}}
+/* --- 21 : clôturer une réunion (décisions, actions, mail de suivi) --- */
+{const _en=evNote;evNote=function(id){let ev=null;Object.values(GCAL.by).forEach(m=>m.ev.forEach(e=>{if(e.id===id)ev=e}));const had=evNoteOf(id);_en(id);const it=evNoteOf(id);if(it&&!had&&ev)patchItem(it.id,{evAtt:ev.att.map(a=>({name:a.name,email:a.email}))})}}
+async function meetClose(){U.flush&&U.flush();const it=ST.items.get(U.sel);if(!it)return;const b=String(it.body||"");
+ const sec=n=>{const m=b.split(new RegExp("^##\\s*"+n+"\\s*$","im"))[1];return m?m.split(/^##\s/m)[0]:""};
+ const dec=sec("Décisions").split("\n").map(l=>l.replace(/^\s*[-*]\s*/,"").trim()).filter(l=>l.length>2);
+ const acts=sec("Actions").split("\n").map(l=>l.match(/^\s*[-*]\s*\[( |x|X)\]\s*(.+)/)).filter(Boolean).map(m=>m[2].trim()).filter(l=>l.length>2);
+ const mine=[],theirs=[];acts.forEach(a=>{const p=parseCapture("t "+a);(p.waitingOn||p.newWait?theirs:mine).push(p)});
+ const made=[];dec.forEach(d=>{const x=newItem({type:"decision",status:"done",title:d.slice(0,200),body:"Réunion : "+it.title,space:it.space,people:it.people||[],src:"reunion"});putItem(x);made.push(x.id)});
+ [...mine,...theirs].forEach(a=>{a.newPeople.forEach(n=>a.people.push(ensurePerson(n)));if(a.newWait){a.waitingOn=ensurePerson(a.newWait);a.people.push(a.waitingOn)}const x=newItem({type:"task",status:a.waitingOn?"waiting":"todo",waitingOn:a.waitingOn||null,waitingSince:a.waitingOn?nowIso():null,title:a.title,due:a.due,people:a.people,space:it.space||a.space,src:"reunion"});putItem(x);made.push(x.id)});
+ patchItem(it.id,{closedAt:nowIso()});
+ const mail=`Bonjour,\n\nMerci pour la réunion. Voici ce qu'on a retenu :\n${dec.map(d=>"- "+d).join("\n")||"- "}\n\n${theirs.length?"Actions de votre côté :\n"+theirs.map(a=>"- "+a.title+(a.due?" ("+fmtDue(a.due).toLowerCase()+")":"")).join("\n")+"\n\n":""}${mine.length?"De mon côté :\n"+mine.map(a=>"- "+a.title+(a.due?" ("+fmtDue(a.due).toLowerCase()+")":"")).join("\n")+"\n\n":""}Bonne journée,\n${KNAME()}`;
+ toast(`${dec.length} décision(s), ${acts.length} action(s) créées`,()=>made.forEach(id=>hardDelete("items",id)),"",7000);
+ const to=(it.evAtt||[]).map(a=>a.email).filter(e=>e&&!accounts().some(x=>x.email&&x.email.toLowerCase()===e.toLowerCase()));
+ if(CAP.mcp&&accounts().some(a=>a.roles.mail)&&confirm("Créer le brouillon du mail de suivi"+(to.length?" pour "+to.length+" participant(s)":"")+" ?\nRien n'est envoyé : tu relis dans ta messagerie.")){
+  try{await CAP.mcp.callTool("Gmail","create_draft",{to,subject:"Suivi : "+it.title,body:mail,includeSignature:true});toast("Brouillon du mail de suivi créé")}catch(e){toast(mcpErr(e,"Mail"),null,"danger",7000)}}else copy(mail,"Mail de suivi copié");openItem(it.id)}
+/* --- 20 : tri des mails (à répondre / en attente / pour info) --- */
+const MTAG={r:"À répondre",a:"En attente",i:"Pour info"};U.mtag="all";
+{const _vm=V.mails;V.mails=()=>{const tags=ST.settings.mailTags||{};const saved=U.mails;if(saved&&U.mtag!=="all")U.mails=saved.filter(m=>(tags[m.id]||"r")===U.mtag);let h;try{h=_vm()}finally{U.mails=saved}
+ h=h.replace(/<div class="mrow" data-mail="([^"]+)">/g,(m0,id)=>{const t=tags[id];return m0+(t&&t!=="r"?`<span class="mtag t${t}">${MTAG[t]}</span>`:"")});
+ const seg=`<div class="seg" style="margin:-8px 0 14px">${[["all","Tous"],["r","À répondre"],["a","En attente"],["i","Pour info"]].map(([k,l])=>`<button class="${U.mtag===k?"on":""}" data-mtagf="${k}">${l}</button>`).join("")}</div>`;
+ return h.replace(/(<\/div><\/div>)/,"$1"+seg)}}
+{const _dm=drawMail;drawMail=function(){_dm();const m=U.mail;if(!m)return;const t=(ST.settings.mailTags||{})[m.id]||"r";const db=$("#drawer .db");db&&db.insertAdjacentHTML("afterbegin",`<div class="seg" style="margin-bottom:10px">${Object.entries(MTAG).map(([k,l])=>`<button class="${t===k?"on":""}" data-mtag="${k}">${l}</button>`).join("")}</div>`)}}
+/* --- 5 : écran État du système --- */
+V.etat=()=>{const L=accounts();const lc=ST.settings.lastCloud||{};const row=(ok,l,d)=>`<div class="strow"><span class="std ${ok===true?"ok":ok===false?"ko":"wa"}"></span><div style="flex:1"><b>${l}</b><div class="sub" style="font-size:13px">${d}</div></div></div>`;
+ return `<div class="hdr"><div><h1>État du système</h1><div class="sub">Tout ce qui fait tourner Kennach, en un coup d'œil.</div></div><div class="act"><button class="btn" data-act="etatref">↻</button></div></div>
+ <div class="card">${row(ST.mode==="db","Base Firebase",ST.mode==="db"?"Connectée · "+(ST.pending?ST.pending+" écriture(s) en cours":"tout est enregistré"):"Mode : "+ST.mode)}
+ ${row(navigator.onLine,"Connexion internet",navigator.onLine?"En ligne":"Hors connexion : les notes sont gardées sur l'appareil et partiront au retour")}
+ ${row(!!window.KUSER,"Compte Kennach",esc((window.KUSER&&window.KUSER.email)||"—")+" · "+linkedProviders().map(p=>p.replace(".com","")).join(" + "))}
+ ${L.map(a=>row(KP.valid(a)?true:"w",PROV[a.prov].n+" · "+esc(a.email),[a.roles.mail?"mails + agenda":"",a.roles.backup?"sauvegarde":"",a.roles.fiches?"fiches":""].filter(Boolean).join(", ")+(KP.valid(a)?" · connecté":" · reconnexion au prochain clic"))).join("")}
+ ${row(ST.settings.lastSnap===ymd(new Date())?true:"w","Sauvegarde Firebase","Dernière : "+(ST.settings.lastSnap||"jamais"))}
+ ${L.filter(a=>a.roles.backup).map(a=>{const d=lc[a.id];return row(d&&Date.now()-new Date(d)<36*3600e3?true:"w","Sauvegarde "+PROV[a.prov].bk,"Dernière : "+(d?fmtDate(d)+" "+hm(new Date(d)):"jamais"))}).join("")}
+ ${row(true,"Données",items().length+" éléments · "+spaces().length+" espaces · "+people().length+" personnes · corbeille "+[...ST.items.values()].filter(i=>i.deletedAt).length)}
+ ${row("serviceWorker" in navigator&&!!navigator.serviceWorker.controller?true:"w","Fonctionnement hors connexion",navigator.serviceWorker&&navigator.serviceWorker.controller?"Actif":"Pas encore actif (rouvre l'app)")}
+ ${row(typeof Notification!=="undefined"&&Notification.permission==="granted"?true:"w","Rappels",typeof Notification==="undefined"?"Non pris en charge ici":Notification.permission==="granted"?"Autorisés":"Pas encore autorisés")}</div>
+ <div class="card"><b>Dernières erreurs</b>${U.errlog.length?`<div class="list" style="margin-top:8px">${U.errlog.slice(0,12).map(e=>`<div class="bkrow"><span>${esc(e.msg)}</span><small style="color:var(--text-3)">${fmtDate(e.at)} ${hm(new Date(e.at))}</small></div>`).join("")}</div><button class="tool" data-act="errclear" style="margin-top:8px">Effacer</button>`:'<p class="cardsub">Aucune.</p>'}</div>`};
+/* --- 6 : export Markdown hebdomadaire sur le cloud --- */
+{const _sc=snapCloud;snapCloud=async function(acc,force){const r=await _sc(acc,force);try{const lm=(ST.settings.lastMd||{})[acc.id];if(r&&(!lm||Date.now()-new Date(lm)>7*864e5)){await KP.backup.save(acc,`kennach-lisible-${ymd(new Date())}.md`,mdExport(),"text/markdown");putSettings({lastMd:{...(ST.settings.lastMd||{}),[acc.id]:nowIso()}})}}catch(e){}return r}}
+/* --- 8, 9, 10, 11, 12 : fiches --- */
+U.fi.filter="all";U.fi.full=false;U.fi.loadingAll=false;
+const fiLate=f=>/retard/i.test(f.etat||"");
+{const _vf=V.fiches;V.fiches=()=>{let h;const q=nn(U.fi.q);
+ if(!U.fi.open&&U.fi.files){const G0=fiGroups;const flt=U.fi.filter;
+  fiGroups=()=>G0().map(g=>({...g,items:g.items.filter(f=>(flt==="new"?fiSeen(f):flt==="late"?fiLate(f):true)&&(!q||!U.fi.full||nn(f.name+" "+(f.kw||"")+" "+(U.fi.txt[f.id]||"")).includes(q)))})).filter(g=>g.items.length);
+  try{h=_vf()}finally{fiGroups=G0}
+  if(q&&U.fi.full)h=h.replace(/<button class="firow" data-fiopen="([^"]+)">/g,(m0,id)=>m0);
+  const recent=(U.fi.files||[]).filter(f=>(isFiche(f)||isSession(f))&&Date.now()-new Date(f.modifiedTime)<48*3600e3).slice(0,8);
+  const bar=`<div class="frow" style="margin:-4px 0 12px"><div class="seg">${[["all","Toutes"],["new","Nouveautés"],["late","En retard"]].map(([k,l])=>`<button class="${U.fi.filter===k?"on":""}" data-fiflt="${k}">${l}</button>`).join("")}</div>${q.length>=3?`<button class="tool ${U.fi.full?"on":""}" data-act="fifull">${U.fi.loadingAll?"Lecture des fiches…":U.fi.full?"Dans le texte ✓":"Chercher aussi dans le texte"}</button>`:""}</div>
+  ${recent.length&&U.fi.filter==="all"&&!q?`<div class="grp">Quoi de neuf (48 h)</div><div class="list">${recent.map(f=>isSession(f)?`<a class="firow" href="${esc(f.url)}" target="_blank" rel="noopener"><div class="fi-t"><b>${esc(f.name.replace(/^Session\s*/,"Journal "))}</b></div><small>${fmtDate(f.modifiedTime)} ${hm(new Date(f.modifiedTime))}</small></a>`:`<button class="firow" data-fiopen="${f.id}"><div class="fi-t"><b>${fiSeen(f)?'<span class="fdot"></span>':""}${esc(f.name.replace(/^\d\d - /,""))}</b></div><small>${fmtDate(f.modifiedTime)} ${hm(new Date(f.modifiedTime))}</small></button>`).join("")}</div>`:""}`;
+  h=h.replace(/(<div class="cap" style="margin-bottom:14px">[\s\S]*?<\/div>)/,"$1"+bar);
+  return h}
+ h=_vf();if(U.fi.open){const f=(U.fi.files||[]).find(x=>x.id===U.fi.open);if(f&&(U.fi.tab||"resume")==="resume"&&U.fi.txt[f.id]){
+  const linked=spaces().find(s=>s.ficheId===f.id);const tasks=items().filter(i=>open_(i)&&i.type==="task"&&(i.ficheId===f.id||(linked&&i.space===linked.id))).sort(byDue);
+  const extra=`<div class="card"><b>Dans Kennach</b><p class="cardsub">Espace relié : <select class="fld" id="filink" style="width:auto;display:inline-block;padding:4px 8px"><option value="">— aucun —</option>${spaces().map(s=>`<option value="${s.id}" ${linked&&linked.id===s.id?"selected":""}>${esc(s.name)}</option>`).join("")}</select></p>${listHTML(tasks.slice(0,15))||'<div class="sub" style="font-size:13px">Aucune tâche ouverte liée.</div>'}
+  <div class="lbl2">Ajouter une ligne au « À FAIRE » de la fiche</div><div class="frow"><input class="fld" id="fiadd" style="flex:1" placeholder="ex : Relancer Datalink pour le devis"><button class="btn" data-act="fiaddgo">Ajouter à la fiche</button></div><div class="sub" style="font-size:12px;margin-top:4px">Écrit directement dans le Google Doc (tu confirmes avant).</div></div>`;
+  h=h.replace(/(<div class="pick">(?:(?!<div class="pick">)[\s\S])*$)/,extra+"$1");if(!h.includes('id="filink"'))h+=extra}}return h}}
+async function fiLoadAll(){U.fi.loadingAll=true;render();const F=(U.fi.files||[]).filter(isFiche);let k=0;for(const f of F){if(!U.fi.txt[f.id]){try{await fiText(f)}catch(e){}}if(++k%5===0)render()}U.fi.loadingAll=false;render()}
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-fiflt],[data-act=fifull],[data-act=fiaddgo],[data-fiopen2],[data-mtagf],[data-mtag],[data-evprep],[data-act=mdpick],[data-act=mdsave],[data-act=mdgo],[data-act=kc_theirs],[data-act=kc_mine],[data-act=edfull],[data-act=meetclose],[data-act=etatref],[data-act=errclear],[data-act=sidecol],[data-act=remind]");if(!t)return;const d=t.dataset;
+ if(d.fiflt){U.fi.filter=d.fiflt;return render()}
+ if(d.act==="fifull"){U.fi.full=!U.fi.full;if(U.fi.full)fiLoadAll();return render()}
+ if(d.fiopen2){setTimeout(()=>{U.fi.open=d.fiopen2;U.fi.tab="resume";if($("#drawer").classList.contains("on"))closeDrawer();render()},0);return}
+ if(d.mtagf){U.mtag=d.mtagf;return render()}
+ if(d.mtag){const m=U.mail;if(!m)return;putSettings({mailTags:{...(ST.settings.mailTags||{}),[m.id]:d.mtag}});drawMail();return}
+ if(d.evprep){e.stopPropagation();return prepMeeting(d.evprep)}
+ if(d.act==="mdpick")return myDaySheet();
+ if(d.act==="mdsave"){putSettings({myday:{date:ymd(new Date()),ids:[...U.mdSel]}});closeDrawer();return toast("Ma journée : "+U.mdSel.size+" tâche(s)")}
+ if(d.act==="mdgo"){const id=myDay().find(x=>ST.items.get(x).status!=="done");if(id)openFocus(id);return}
+ if(d.act==="kc_theirs"){U.edBase=null;const id=U.sel;openItem(id);return}
+ if(d.act==="kc_mine"){const c=U.conflict;if(c){const cur=ST.items.get(U.sel);U.edBase={id:cur.id,updatedAt:cur.updatedAt,body:cur.body||"",title:cur.title};U.flush&&U.flush();const ed=$("#edb");if(ed)putItem({...ST.items.get(U.sel),body:ed.value,title:($("#edt")||{}).value||cur.title})}$("#kconf")&&$("#kconf").remove();return toast("Ta version est gardée")}
+ if(d.act==="edfull"){$("#drawer").classList.toggle("full");return}
+ if(d.act==="meetclose")return meetClose();
+ if(d.act==="etatref")return render();
+ if(d.act==="errclear"){U.errlog=[];try{localStorage.removeItem("k_errlog")}catch(_){}return render()}
+ if(d.act==="sidecol"){putSettings({sideCol:!ST.settings.sideCol});return}
+ if(d.act==="remind")return enableReminders();
+ if(d.act==="fiaddgo"){const f=(U.fi.files||[]).find(x=>x.id===U.fi.open);const v=(($("#fiadd")||{}).value||"").trim();if(!f||!v)return;if(hasSecret(v))return toast("🔒 Ça ressemble à un mot de passe : rien n'est écrit.",null,"danger");
+  if(!confirm("Ajouter dans la fiche « "+f.name+" », section À FAIRE :\n\n"+v))return;try{const line=await KP.fiches.appendTodo(fiAcc(),f.id,v+" (ajouté depuis Kennach le "+fmtDate(new Date())+")");delete U.fi.txt[f.id];toast("Ajouté à la fiche : "+line.slice(0,60));await fiText({...f,modifiedTime:nowIso()});render()}catch(er){toast(er.code==="api_disabled"?"Active l'API Google Docs dans la console Google Cloud.":er.code==="consent_required"?"Reconnecte le compte (nouvelle autorisation : modifier tes Google Docs).":"Écriture impossible : "+(er.message||er.code),null,"danger",8000)}}});
+document.addEventListener("change",e=>{if(e.target&&e.target.id==="filink"){const fid=U.fi.open;spaces().filter(s=>s.ficheId===fid).forEach(s=>putSpace({...s,ficheId:null}));if(e.target.value){const s=sp(e.target.value);putSpace({...s,ficheId:fid});toast("Fiche reliée à "+s.name)}}});
+/* fiche reliée visible dans l'espace */
+{const _vs=V.space;V.space=()=>{let h=_vs();const s=sp(U.space);if(s&&s.ficheId){const f=(U.fi&&U.fi.files||[]).find(x=>x.id===s.ficheId);h=h.replace(/(<\/div><\/div>)/,`$1<button class="fichip" data-nav="fiches" data-fiopen2="${s.ficheId}">${ICN.folder} Fiche : ${esc(f?f.name.replace(/^\d\d - /,""):"ouvrir")}</button>`)}return h}}
+/* --- 13 : capture depuis un lien (raccourci iPhone, menu de l'app) --- */
+function capFromUrl(){const p=new URLSearchParams(location.search);const h=new URLSearchParams(location.hash.replace(/^#/,"").split("?")[1]||"");const txt=p.get("cap")??h.get("cap");if(txt===null)return;
+ try{history.replaceState(null,"",location.pathname+"#today")}catch(e){}
+ if(txt&&(p.get("save")==="1")){if(saveCapture(txt))toast("Capturé depuis le raccourci ✓")}else setTimeout(()=>capSheet({pre:txt||""}),300)}
+/* --- 14 : rappels (tâches avec heure, réunions) --- */
+U.remTimers=[];
+async function enableReminders(){if(typeof Notification==="undefined")return toast("Les rappels ne sont pas pris en charge sur cet appareil.");const p=await Notification.requestPermission();putSettings({remind:p==="granted"});toast(p==="granted"?"Rappels activés (quand Kennach est ouvert)":"Rappels refusés par le navigateur");planReminders()}
+function notify(title,body){try{if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(title,{body,icon:"icon-192.png",badge:"icon-192.png"}));else new Notification(title,{body,icon:"icon-192.png"})}catch(e){}toast("⏰ "+title+(body?" · "+body:""),null,"",9000)}
+function planReminders(){U.remTimers.forEach(clearTimeout);U.remTimers=[];if(!ST.settings.remind||typeof Notification==="undefined"||Notification.permission!=="granted")return;const now=Date.now(),lim=now+12*3600e3;
+ items().filter(i=>open_(i)&&i.due&&hasTime(i.due)).forEach(i=>{const t=+new Date(i.due);if(t>now&&t<lim)U.remTimers.push(setTimeout(()=>notify(i.title,"Maintenant"),t-now))});
+ if(ST.settings.calOn)eventsOn(today0()).filter(e=>!e.allDay).forEach(e=>{const t=+e.start-10*60e3;if(t>now&&t<lim)U.remTimers.push(setTimeout(()=>notify(e.title,"Réunion dans 10 min"+(e.loc?" · "+e.loc:"")),t-now))})}
+setInterval(planReminders,15*60e3);
+/* --- 22 + 23 : gestes et transitions --- */
+U.navStack=[];
+{const _nav=nav;nav=function(v,arg){if(U.view!==v||(v==="space"&&U.space!==arg))U.navStack.push([U.view,U.view==="space"?U.space:U.view==="person"?U.person:undefined]);if(U.navStack.length>30)U.navStack.shift();
+ const go=()=>_nav(v,arg);if(document.startViewTransition&&!matchMedia("(prefers-reduced-motion: reduce)").matches&&!document.hidden){try{document.startViewTransition(go);return}catch(e){}}go()}}
+(function(){let x0=null,y0=0;document.addEventListener("touchstart",e=>{const t=e.touches[0];x0=t.clientX<24?t.clientX:null;y0=t.clientY},{passive:true});
+ document.addEventListener("touchend",e=>{if(x0===null)return;const t=e.changedTouches[0];const dx=t.clientX-x0,dy=Math.abs(t.clientY-y0);x0=null;if(dx<80||dy>60)return;
+  if($("#drawer").classList.contains("on"))return closeDrawer();if(U.fi&&U.fi.open&&U.view==="fiches"){U.fi.open=null;return render()}const p=U.navStack.pop();if(p){const s=U.navStack.length;nav(p[0],p[1]);U.navStack.length=s}},{passive:true})})();
+(function(){let raf=0;document.addEventListener("scroll",e=>{const m=e.target;if(!(m&&m.id==="main"))return;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;document.body.classList.toggle("scrolled",m.scrollTop>40)})},true)})();
+/* --- 27 : barre latérale repliable --- */
+{const _rs=renderSide;renderSide=function(){_rs();document.body.classList.toggle("sidecol",!!ST.settings.sideCol);const b=$("#side .brand");if(b&&!b.querySelector("[data-act=sidecol]"))b.insertAdjacentHTML("beforeend",`<button class="sidebtn" data-act="sidecol" title="Replier la barre">${ICN.side}</button>`);
+ const mt=$("#mtop b");if(mt)mt.setAttribute("data-t",(V_TITLE[U.view]||"").replace(/^·\s*/,"")||"Kennach")}}
+/* --- 29 : recherche unifiée (notes + fiches + mails) --- */
+{const _vsr=V.search;V.search=()=>_vsr().replace('<div id="sres"></div>','<div id="sres"></div><div id="sres2"></div>')}
+async function searchMore(q){const box=$("#sres2");if(!box)return;q=String(q||"").trim();if(q.length<3){box.innerHTML="";return}const nq=nn(q);
+ if(U.fi&&U.fi.files===null&&typeof fiLoadCache==="function")fiLoadCache();
+ const F=(U.fi&&U.fi.files||[]).filter(isFiche).filter(f=>nn(f.name+" "+(U.fi.txt[f.id]||"")).includes(nq)).slice(0,8);
+ box.innerHTML=(F.length?`<div class="grp">Fiches</div><div class="list">${F.map(f=>`<button class="firow" data-nav="fiches" data-fiopen2="${f.id}"><div class="fi-t"><b>${esc(f.name.replace(/^\d\d - /,""))}</b><span>${(()=>{const t=U.fi.txt[f.id]||"";const i=nn(t).indexOf(nq);return i<0?"":esc(t.slice(Math.max(0,i-40),i+80))})()}</span></div></button>`).join("")}</div>`:"")+(accounts().some(a=>a.roles.mail)?`<div class="frow" style="margin-top:12px"><button class="tool" data-act="srmail">${ICN.mail} Chercher « ${esc(q)} » dans les mails</button></div>`:"")}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="sq"){clearTimeout(U.smT);U.smT=setTimeout(()=>searchMore(e.target.value),250)}});
+document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-act=srmail]");if(!t)return;const q=($("#sq")||{}).value||"";const box=$("#sres2");if(!box)return;t.disabled=true;t.textContent="Recherche…";
+ try{const r=await CAP.mcp.callTool("Gmail","search_threads",{query:q+" newer_than:365d",pageSize:10});const th=(r.payload&&r.payload.threads)||[];
+  box.insertAdjacentHTML("beforeend",`<div class="grp">Mails</div><div class="list">${th.map(x=>{const m=(x.messages||[])[0]||{};return `<a class="firow" href="${esc(x.viewUrl||"#")}" target="_blank" rel="noopener"><div class="fi-t"><b>${esc(m.subject||"")}</b><span>${esc((m.addressDisplayNames&&m.addressDisplayNames[0]&&m.addressDisplayNames[0].displayName)||m.sender||"")}</span></div><small>${m.date?fmtDate(m.date):""}</small></a>`}).join("")||'<div class="empty" style="padding:12px">Aucun mail.</div>'}</div>`);t.remove()}catch(er){toast(mcpErr(er,"Mail"),null,"danger");t.disabled=false}});
+/* --- démarrage et rendu --- */
+{const _al2=afterLoad;afterLoad=function(){_al2();capFromUrl();planReminders();authPill()}}
+{const _r2=render;render=function(){document.body.dataset.view=U.view;_r2();checkConflict();if(ST.mode==="db")authPill();if(U.view==="search"){const sq=$("#sq");if(sq&&sq.value)searchMore(sq.value)}}}
+{const _vs2=V.settings;V.settings=()=>_vs2().replace('<div class="card"><b>Données</b>',`<div class="card"><b>Système</b><p class="cardsub">Santé de l'app, rappels, affichage.</p><div class="frow"><button class="btn" data-nav="etat">${ICN.shield} État du système</button><button class="btn" data-act="remind">${ICN.bell} ${ST.settings.remind&&typeof Notification!=="undefined"&&Notification.permission==="granted"?"Rappels activés ✓":"Activer les rappels"}</button><button class="btn" data-act="sidecol">${ICN.side} ${ST.settings.sideCol?"Déplier":"Replier"} la barre latérale</button></div><p class="cardsub" style="margin-top:8px">Rappels : tâches avec une heure et 10 min avant chaque réunion, tant que Kennach est ouvert (limite iPhone : pas de rappel app fermée).</p><p class="cardsub">Capture rapide depuis un raccourci iPhone : ouvrir l'URL <code>${esc(location.origin+location.pathname)}?cap=TEXTE&amp;save=1</code></p></div><div class="card"><b>Données</b>`)}
 
 document.body.classList.add("sa");
 boot();
