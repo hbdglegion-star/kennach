@@ -4,10 +4,10 @@
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
- "background_color": "#111110",
- "theme_color": "#111110",
+ "background_color": "#0A0908",
+ "theme_color": "#0A0908",
  "lang": "fr",
- "description": "Ton carnet personnel.",
+ "description": "Ton carnet. Écrire, retrouver, avancer.",
  "icons": [
   {
    "src": "icon-192.png",
