@@ -797,6 +797,16 @@ body[data-view=fiches] .mdv{max-width:72ch;font-size:16.5px;line-height:1.65}
 .sidebtn{margin-left:auto;background:none;border:0;color:var(--text-3);cursor:pointer;padding:4px;border-radius:6px}
 @media(max-width:820px){.sidebtn{display:none}#mtop b{transition:opacity .2s}body:not(.scrolled) #mtop b{opacity:0}body.scrolled #mtop b{opacity:1}}
 ::view-transition-old(root),::view-transition-new(root){animation-duration:.18s}
+.callout{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:12px;margin:8px 0;font-size:15px;line-height:1.5;background:var(--surface-2)}
+.callout .cic{flex:none;font-size:16px;line-height:1.4}
+.callout.c-warn{background:color-mix(in srgb,#ff9f0a 14%,transparent)}
+.callout.c-bad{background:color-mix(in srgb,#ff3b30 13%,transparent)}
+.callout.c-ok{background:color-mix(in srgb,#34c759 14%,transparent)}
+.callout.c-tip{background:color-mix(in srgb,#0a84ff 12%,transparent)}
+.mdv .mh2{margin-top:18px;padding-top:4px}
+.mdv .tblw{border-radius:12px;border:1px solid var(--border);overflow:auto}
+.mdv .tblw table{border:0}.mdv .tblw th,.mdv .tblw td{border:0;border-bottom:1px solid var(--border);padding:7px 11px}
+.mdv .tblw tr:last-child td{border-bottom:0}.mdv .tblw tr:nth-child(even) td{background:color-mix(in srgb,var(--text) 2.5%,transparent)}
 
 body.sa [data-nav=mails],body.sa [data-nav=veille],body.sa [data-nav=photo],body.sa [data-nav=ask],body.sa [data-nav=import],body.sa [data-act=askact]{display:none!important}
 </style>
@@ -1925,7 +1935,7 @@ async function loadFileImports(){try{const r=await fetch("import/index.json",{ca
  for(const f of (idx.batches||[])){try{const x=await (await fetch("import/"+f,{cache:"no-store"})).json();const id="file-"+f.replace(/\W/g,"");SHARED.fileImports.set(id,{id,...x,fromFile:true})}catch(e){}}mergeImports()}catch(e){}}
 function mergeImports(){const done=new Set(ST.settings.importDone||[]);for(const [k,v] of SHARED.fileImports)if(!done.has(k))SHARED.imports.set(k,v);else SHARED.imports.delete(k);schedule()}
 V.import=()=>{const bs=[...SHARED.imports.values()].sort((a,b)=>String(a.order||a.id).localeCompare(String(b.order||b.id)));
- if(!bs.length)return `<div class="hdr"><div><h1>Import</h1></div></div><div class="empty"><b>Rien à importer.</b>Les imports prêts apparaîtront ici.</div>`;
+ if(!bs.length)return `<div class="hdr"><div><h1>Import</h1></div></div><div class="empty"><b>Rien à importer.</b>Importe un lot (.json) depuis Réglages › Système.</div>`;
  const b=SHARED.imports.get(U.ib)||bs[0];U.ib=b.id;U.isel=U.isel||{};
  const its=Array.isArray(b.items)?b.items:[];const sel=k=>U.isel[b.id+"|"+k]??(its[k].keep!==false&&!its[k].secret);
  const nk=its.filter((_,k)=>sel(k)).length;
@@ -1943,7 +1953,7 @@ async function doImport(){
  const names=[...new Set(pick.map(x=>x.space).filter(Boolean))];const map={};
  for(const n of names){let s=spaces().find(x=>norm(x.name)===norm(n));if(!s){const def=(b.spaces||[]).find(z=>norm(z.name)===norm(n));s={id:nid("s"),name:n,kind:def&&T_KIND[def.kind]?def.kind:"area",color:COLORS[spaces().length%COLORS.length],goal:"",createdAt:nowIso()};await putSpace(s)}map[norm(n)]=s.id}
  const batch=nid("b");let k=0;
- for(const x of pick){const it=newItem({type:T_TYPE[x.type]?x.type:"note",title:String(x.title).slice(0,300),body:String(x.body||"").slice(0,20000),status:["inbox","todo","done","someday","waiting"].includes(x.status)?x.status:(x.space?"todo":"inbox"),space:x.space?map[norm(x.space)]:null,tags:[...(Array.isArray(x.tags)?x.tags.map(String):[]),"onenote"].slice(0,6),due:/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")?iso(new Date(x.due+"T00:00:00")):null,createdAt:/^\d{4}-\d{2}-\d{2}/.test(x.date||"")?iso(new Date(x.date.slice(0,10)+"T09:00:00")):nowIso(),src:"import",batchId:batch});
+ for(const x of pick){const it=newItem({type:T_TYPE[x.type]?x.type:"note",title:String(x.title).slice(0,300),body:String(x.body||"").slice(0,20000),status:["inbox","todo","done","someday","waiting"].includes(x.status)?x.status:(x.space?"todo":"inbox"),space:x.space?map[norm(x.space)]:null,tags:[...(Array.isArray(x.tags)?x.tags.map(String):[]),b.tag||"onenote"].slice(0,6),pinned:!!x.pinned,due:/^\d{4}-\d{2}-\d{2}$/.test(x.due||"")?iso(new Date(x.due+"T00:00:00")):null,createdAt:/^\d{4}-\d{2}-\d{2}/.test(x.date||"")?iso(new Date(x.date.slice(0,10)+"T09:00:00")):nowIso(),src:"import",batchId:batch});
   if(it.status==="done"){it.done=true;it.doneAt=it.createdAt}
   await putItem(it);if(++k%20===0)await new Promise(r=>setTimeout(r,300))}
  if(b.fromFile){await putSettings({importDone:[...(ST.settings.importDone||[]),b.id]});SHARED.imports.delete(b.id)}else await dbWrite("import/"+b.id,r=>r.delete());
@@ -2002,7 +2012,7 @@ function md(src,opt={}){
   if((m=ln.match(/^\s*\d+[.)]\s+(.*)/))){if(list!=="ol"){close();out.push("<ol>");list="ol"}out.push(`<li>${mdInline(m[1])}</li>`);return}
   close();
   if(!ln.trim()){out.push('<div class="sp8"></div>');return}
-  if(/^\s*>/.test(ln)){out.push(`<blockquote>${mdInline(ln.replace(/^\s*>\s?/,""))}</blockquote>`);return}
+  if(/^\s*>/.test(ln)){const t=ln.replace(/^\s*>\s?/,"");const cm=t.match(/^(⚠️|🔴|✅|💡|ℹ️)\s*/u);const ck=cm?{"⚠️":"warn","🔴":"bad","✅":"ok","💡":"tip","ℹ️":"info"}[cm[1]]:"";out.push(ck?`<div class="callout c-${ck}"><span class="cic">${cm[1]}</span><div>${mdInline(t.slice(cm[0].length))}</div></div>`:`<blockquote>${mdInline(t)}</blockquote>`);return}
   if(/^\s*---+\s*$/.test(ln)){out.push("<hr>");return}
   out.push(`<p>${mdInline(ln)}</p>`);
  });
@@ -2780,6 +2790,16 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
 {const _al2=afterLoad;afterLoad=function(){_al2();capFromUrl();planReminders();authPill()}}
 {const _r2=render;render=function(){document.body.dataset.view=U.view;_r2();checkConflict();if(ST.mode==="db")authPill();if(U.view==="search"){const sq=$("#sq");if(sq&&sq.value)searchMore(sq.value)}}}
 {const _vs2=V.settings;V.settings=()=>_vs2().replace('<div class="card"><b>Données</b>',`<div class="card"><b>Système</b><p class="cardsub">Santé de l'app, rappels, affichage.</p><div class="frow"><button class="btn" data-nav="etat">${ICN.shield} État du système</button><button class="btn" data-act="remind">${ICN.bell} ${ST.settings.remind&&typeof Notification!=="undefined"&&Notification.permission==="granted"?"Rappels activés ✓":"Activer les rappels"}</button><button class="btn" data-act="sidecol">${ICN.side} ${ST.settings.sideCol?"Déplier":"Replier"} la barre latérale</button></div><p class="cardsub" style="margin-top:8px">Rappels : tâches avec une heure et 10 min avant chaque réunion, tant que Kennach est ouvert (limite iPhone : pas de rappel app fermée).</p><p class="cardsub">Capture rapide depuis un raccourci iPhone : ouvrir l'URL <code>${esc(location.origin+location.pathname)}?cap=TEXTE&amp;save=1</code></p></div><div class="card"><b>Données</b>`)}
+/* --- v8 : import d'un lot .json (fichier local, jamais sur GitHub) --- */
+{const _vs3=V.settings;V.settings=()=>_vs3().replace('<div class="card"><b>Données</b>',`<div class="card"><b>Importer un lot</b><p class="cardsub">Un fichier .json préparé pour Kennach (notes de projet, fiches…). Tu choisis ce que tu gardes avant d'importer.</p><label class="btn" style="display:inline-flex;cursor:pointer">${ICN.folder} Choisir le fichier<input type="file" id="klot" accept=".json,application/json" style="display:none"></label></div><div class="card"><b>Données</b>`)}
+document.addEventListener("change",async e=>{if(!e.target||e.target.id!=="klot")return;const f=e.target.files&&e.target.files[0];if(!f)return;
+ try{const x=JSON.parse(await f.text());if(!x||!Array.isArray(x.items)||!x.items.length)throw new Error("aucun élément");
+  const id="lot-"+String(x.id||f.name).replace(/\W/g,"").slice(0,40);
+  if((ST.settings.importDone||[]).includes(id)&&!confirm("Ce lot a déjà été importé. Le reprendre quand même ?"))return;
+  if((ST.settings.importDone||[]).includes(id))putSettings({importDone:(ST.settings.importDone||[]).filter(z=>z!==id)});
+  x.items.forEach(it=>{if(hasSecret(String(it.title)+" "+String(it.body||"")))it.secret=true});
+  SHARED.fileImports.set(id,{...x,id,fromFile:true});mergeImports();U.ib=id;U.isel={};nav("import");toast(x.items.length+" élément(s) à vérifier")}
+ catch(er){toast("Fichier illisible : "+(er.message||er),null,"danger")}e.target.value=""});
 
 document.body.classList.add("sa");
 boot();
