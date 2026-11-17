@@ -231,8 +231,8 @@ window.KNAME=function(){var u=window.KUSER;return((u&&u.displayName)||"").split(
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#F6F5F2;--surface:#FFF;--surface-2:#EFEDE8;--border:#E3E0D9;--text:#1B1A17;--text-2:#6B6860;--text-3:#9C988E;--accent:#3355E0;--accent-soft:#E6EBFD;--ok:#1E8E5A;--warn:#B7791F;--danger:#D03A2F;--wait:#7A4FD0;--e2:0 4px 16px rgba(0,0,0,.08);--e3:0 16px 48px rgba(0,0,0,.18);--std:cubic-bezier(.2,0,0,1);--sheet:cubic-bezier(.32,.72,0,1);--font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI Variable","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace}
-[data-theme=dark]{--bg:#111110;--surface:#1A1A18;--surface-2:#232320;--border:#2E2E2A;--text:#EDEDE8;--text-2:#A3A199;--text-3:#6F6D66;--accent:#7C96FF;--accent-soft:#1D2547;--ok:#4CC38A;--warn:#E5B454;--danger:#FF6B5E;--wait:#B79CFF;--e2:0 0 0 1px var(--border);--e3:0 0 0 1px var(--border)}
-@media (prefers-color-scheme:dark){[data-theme=auto]{--bg:#111110;--surface:#1A1A18;--surface-2:#232320;--border:#2E2E2A;--text:#EDEDE8;--text-2:#A3A199;--text-3:#6F6D66;--accent:#7C96FF;--accent-soft:#1D2547;--ok:#4CC38A;--warn:#E5B454;--danger:#FF6B5E;--wait:#B79CFF;--e2:0 0 0 1px var(--border);--e3:0 0 0 1px var(--border)}}
+:root[data-theme=dark]{--bg:#111110;--surface:#1A1A18;--surface-2:#232320;--border:#2E2E2A;--text:#EDEDE8;--text-2:#A3A199;--text-3:#6F6D66;--accent:#7C96FF;--accent-soft:#1D2547;--ok:#4CC38A;--warn:#E5B454;--danger:#FF6B5E;--wait:#B79CFF;--e2:0 0 0 1px var(--border);--e3:0 0 0 1px var(--border)}
+@media (prefers-color-scheme:dark){:root[data-theme=auto]{--bg:#111110;--surface:#1A1A18;--surface-2:#232320;--border:#2E2E2A;--text:#EDEDE8;--text-2:#A3A199;--text-3:#6F6D66;--accent:#7C96FF;--accent-soft:#1D2547;--ok:#4CC38A;--warn:#E5B454;--danger:#FF6B5E;--wait:#B79CFF;--e2:0 0 0 1px var(--border);--e3:0 0 0 1px var(--border)}}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font:15px/22px var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden}
@@ -475,8 +475,8 @@ select.fld{appearance:auto}
 @media (max-width:719px){.mtop .x button{width:36px}.hdr{flex-wrap:wrap;align-items:flex-start}.hdr .act{margin-left:0;width:100%;flex-wrap:wrap}}.btn{white-space:nowrap}.hdr{flex-wrap:wrap}.hdr .act{flex-wrap:wrap}
 /* ===== v3 premium ===== */
 :root{--display:"Newsreader",Georgia,"Times New Roman",serif;--r:16px;--e1:0 1px 2px rgba(20,18,12,.04),0 0 0 1px rgba(20,18,12,.06);--glow:0 8px 30px -8px rgba(51,85,224,.35)}
-[data-theme=dark]{--e1:0 0 0 1px var(--border)}
-@media (prefers-color-scheme:dark){[data-theme=auto]{--e1:0 0 0 1px var(--border)}}
+:root[data-theme=dark]{--e1:0 0 0 1px var(--border)}
+@media (prefers-color-scheme:dark){:root[data-theme=auto]{--e1:0 0 0 1px var(--border)}}
 body{font-feature-settings:"cv11","ss01";letter-spacing:-.006em}
 .side{background:linear-gradient(180deg,var(--bg),color-mix(in srgb,var(--surface-2) 55%,var(--bg)))}
 .logo{background:linear-gradient(135deg,var(--accent),var(--wait));color:#fff;box-shadow:var(--glow)}
@@ -685,8 +685,8 @@ mark{background:color-mix(in srgb,#F5C518 45%,transparent);color:inherit;border-
 :root{--font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI Variable",system-ui,sans-serif;--display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI Variable",system-ui,sans-serif;
  --bg:#F2F2F7;--surface:#FFFFFF;--surface-2:#EEEEF3;--border:rgba(60,60,67,.13);--text:#000;--text-2:rgba(60,60,67,.62);--text-3:rgba(60,60,67,.38);--accent:#007AFF;--accent-soft:rgba(0,122,255,.12);--ok:#34C759;--warn:#FF9500;--danger:#FF3B30;--wait:#AF52DE;
  --e1:0 1px 1px rgba(0,0,0,.03),0 2px 10px rgba(0,0,0,.035);--e3:0 24px 64px rgba(0,0,0,.18);--glow:0 6px 20px -6px rgba(0,122,255,.45);--r:16px}
-[data-theme=dark]{--bg:#000;--surface:#1C1C1E;--surface-2:#2C2C2E;--border:rgba(84,84,88,.45);--text:#fff;--text-2:rgba(235,235,245,.62);--text-3:rgba(235,235,245,.32);--accent:#0A84FF;--accent-soft:rgba(10,132,255,.2);--ok:#30D158;--warn:#FF9F0A;--danger:#FF453A;--wait:#BF5AF2;--e1:none;--e3:0 0 0 1px var(--border)}
-@media (prefers-color-scheme:dark){[data-theme=auto]{--bg:#000;--surface:#1C1C1E;--surface-2:#2C2C2E;--border:rgba(84,84,88,.45);--text:#fff;--text-2:rgba(235,235,245,.62);--text-3:rgba(235,235,245,.32);--accent:#0A84FF;--accent-soft:rgba(10,132,255,.2);--ok:#30D158;--warn:#FF9F0A;--danger:#FF453A;--wait:#BF5AF2;--e1:none;--e3:0 0 0 1px var(--border)}}
+:root[data-theme=dark]{--bg:#000;--surface:#1C1C1E;--surface-2:#2C2C2E;--border:rgba(84,84,88,.45);--text:#fff;--text-2:rgba(235,235,245,.62);--text-3:rgba(235,235,245,.32);--accent:#0A84FF;--accent-soft:rgba(10,132,255,.2);--ok:#30D158;--warn:#FF9F0A;--danger:#FF453A;--wait:#BF5AF2;--e1:none;--e3:0 0 0 1px var(--border)}
+@media (prefers-color-scheme:dark){:root[data-theme=auto]{--bg:#000;--surface:#1C1C1E;--surface-2:#2C2C2E;--border:rgba(84,84,88,.45);--text:#fff;--text-2:rgba(235,235,245,.62);--text-3:rgba(235,235,245,.32);--accent:#0A84FF;--accent-soft:rgba(10,132,255,.2);--ok:#30D158;--warn:#FF9F0A;--danger:#FF453A;--wait:#BF5AF2;--e1:none;--e3:0 0 0 1px var(--border)}}
 body.sa{font-family:var(--font);letter-spacing:-.011em;-webkit-font-smoothing:antialiased;font-feature-settings:normal}
 body.sa .side{background:color-mix(in srgb,var(--surface) 72%,transparent);backdrop-filter:saturate(180%) blur(24px);-webkit-backdrop-filter:saturate(180%) blur(24px);border-right:.5px solid var(--border)}
 body.sa .logo{border-radius:9px;background:linear-gradient(160deg,#5AC8FA,#007AFF 55%,#5856D6);box-shadow:0 2px 8px rgba(0,122,255,.35)}
@@ -833,6 +833,133 @@ body.noms [data-prov=ms],body.noms [data-act=mslink],body.noms .msonly{display:n
 .mtt{font-weight:600;color:var(--text)}
 
 body.sa [data-nav=mails],body.sa [data-nav=veille],body.sa [data-nav=photo],body.sa [data-nav=ask],body.sa [data-nav=import],body.sa [data-act=askact]{display:none!important}
+</style>
+<style id="kdesign">/* ===== Kennach · design premium (v11) ===== */
+html{--r:18px;--r-s:12px}
+html body.sa{--bg:#F6F6F8;--surface:#FFFFFF;--surface-2:#F0F0F3;--surface-3:#E7E7EC;--border:rgba(17,19,34,.085);--border-2:rgba(17,19,34,.14);--text:#0E1016;--text-2:#5A606E;--text-3:#969CA9;
+ --e1:0 1px 2px rgba(16,24,40,.04),0 1px 0 rgba(16,24,40,.02);--e2:0 8px 24px -12px rgba(16,24,40,.18),0 2px 6px rgba(16,24,40,.04);--e3:0 30px 80px -20px rgba(16,24,40,.35),0 0 0 1px rgba(16,24,40,.06);
+ --ring:0 0 0 4px color-mix(in srgb,var(--accent) 18%,transparent);font-size:15px;color:var(--text);background:var(--bg)}
+html[data-theme=dark] body.sa{--bg:#0B0B0D;--surface:#151518;--surface-2:#1E1E22;--surface-3:#28282D;--border:rgba(255,255,255,.07);--border-2:rgba(255,255,255,.13);--text:#F4F4F6;--text-2:#A3A7B1;--text-3:#6C707B;--e1:0 0 0 0 transparent;--e2:0 12px 30px -12px rgba(0,0,0,.7);--e3:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}
+@media (prefers-color-scheme:dark){html[data-theme=auto] body.sa{--bg:#0B0B0D;--surface:#151518;--surface-2:#1E1E22;--surface-3:#28282D;--border:rgba(255,255,255,.07);--border-2:rgba(255,255,255,.13);--text:#F4F4F6;--text-2:#A3A7B1;--text-3:#6C707B;--e1:0 0 0 0 transparent;--e2:0 12px 30px -12px rgba(0,0,0,.7);--e3:0 30px 80px -20px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.08)}}
+html body.sa,html body.sa .main{background:var(--bg)}
+html body.sa{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI Variable","Inter",system-ui,sans-serif;letter-spacing:-.006em;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html body.sa ::selection{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+/* --- mise en page --- */
+@media(min-width:821px){html body.sa .wrap{max-width:940px;padding:44px 52px 140px}html body.sa .wrap.wide{max-width:1240px}}
+/* --- titres --- */
+html body.sa .hdr{margin-bottom:24px;gap:14px}
+html body.sa .hdr h1,html body.sa .date-big{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI Variable Display","Segoe UI Variable","Inter",system-ui,sans-serif;font-weight:700;letter-spacing:-.032em;font-size:32px;line-height:1.12;color:var(--text)}
+html body.sa .hdr .sub{font-size:14.5px;color:var(--text-2);margin-top:6px;line-height:1.5;max-width:60ch}
+html body.sa .greet{font-size:12px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);-webkit-text-fill-color:var(--text-3)}
+@media(max-width:820px){html body.sa .hdr h1,html body.sa .date-big{font-size:30px}}
+html body.sa .grp{font-size:11.5px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);margin:28px 6px 8px;display:flex;align-items:center;gap:8px}
+html body.sa .grp .n{font-size:11px;font-weight:600;color:var(--text-3);background:var(--surface-2);border-radius:999px;padding:1px 7px;letter-spacing:0}
+html body.sa .grp.late{color:var(--danger)}
+/* --- cartes et listes --- */
+html body.sa .card,html body.sa .list,html body.sa .sp,html body.sa .cap,html body.sa .cd,html body.sa .bcard,html body.sa .toc,html body.sa .wg{background:var(--surface);border:1px solid var(--border)!important;box-shadow:var(--e1)!important;border-radius:var(--r)}
+html body.sa .card{padding:18px 20px;margin-bottom:14px}
+html body.sa .card>b:first-child,html body.sa .card h3{font-size:16px;font-weight:650;letter-spacing:-.018em;color:var(--text)}
+html body.sa .cardsub{color:var(--text-2);font-size:13.5px;line-height:1.55}
+html body.sa .list{overflow:hidden;padding:4px 0}
+html body.sa .item{background:transparent;padding:12px 18px;min-height:52px;transition:background .15s}
+html body.sa .item:hover{background:color-mix(in srgb,var(--text) 3.5%,transparent)}
+html body.sa .rowx+.rowx .item::before,html body.sa .item+.item::before{left:52px!important;background:var(--border)!important;height:1px!important}
+html body.sa .ttl{font-size:15px;font-weight:500;color:var(--text);letter-spacing:-.008em}
+html body.sa .meta{gap:6px 10px;margin-top:4px}
+html body.sa .m{font-size:12.5px;color:var(--text-2)}
+html body.sa .m.late{color:var(--danger);font-weight:600}
+html body.sa .m.soon{color:var(--warn);font-weight:600}
+html body.sa .chk{width:21px;height:21px;border:1.6px solid var(--border-2);border-radius:50%;transition:all .15s}
+html body.sa .chk:hover{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+html body.sa .chk.p1{border-color:var(--danger)}
+html body.sa .chk.done{background:var(--accent);border-color:var(--accent)}
+/* --- boutons --- */
+html body.sa .btn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 15px;border-radius:11px;background:var(--surface);color:var(--text);border:1px solid var(--border-2);box-shadow:0 1px 2px rgba(16,24,40,.05);font-size:14px;font-weight:600;letter-spacing:-.01em;transition:background .15s,border-color .15s,transform .08s,box-shadow .15s}
+html body.sa .btn:hover{background:var(--surface-2)}
+html body.sa .btn:active{transform:scale(.98)}
+html body.sa .btn svg{opacity:.85}
+html body.sa .btn.pri{background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 88%,#fff),var(--accent));color:#fff;border-color:color-mix(in srgb,var(--accent) 70%,#000);box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 2px 6px -1px color-mix(in srgb,var(--accent) 45%,transparent)}
+html body.sa .btn.pri:hover{filter:brightness(1.05)}
+html body.sa .btn.danger{color:var(--danger)}
+html body.sa .btn:disabled{opacity:.45;cursor:not-allowed}
+html body.sa .tool{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 13px;border-radius:999px;background:var(--surface);color:var(--text);border:1px solid var(--border-2);font-size:13px;font-weight:550;box-shadow:none;transition:background .15s,border-color .15s}
+html body.sa .tool:hover{background:var(--surface-2)}
+html body.sa .tool.on,html body.sa .pick .tool.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+html body.sa .seg{background:var(--surface-2);border:1px solid var(--border);border-radius:11px;padding:3px;gap:2px}
+html body.sa .seg button{border-radius:8px;padding:6px 12px;font-size:13px;font-weight:550;color:var(--text-2)}
+html body.sa .seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(16,24,40,.08),0 0 0 1px var(--border)}
+html body.sa .chip{background:var(--surface-2);color:var(--text-2);font-weight:550;border-radius:7px;padding:2px 8px}
+/* --- champs --- */
+html body.sa .fld,html body.sa textarea.meet,html body.sa .draft{border:1px solid var(--border-2);border-radius:12px;background:var(--surface);color:var(--text);padding:10px 13px;font-size:15px;transition:border-color .15s,box-shadow .15s}
+html body.sa .fld:focus,html body.sa textarea.meet:focus,html body.sa .draft:focus{border-color:var(--accent);box-shadow:var(--ring);outline:0}
+html body.sa .cap{padding:14px 16px 10px;transition:box-shadow .2s,border-color .2s}
+html body.sa .cap:focus-within{border-color:color-mix(in srgb,var(--accent) 55%,transparent)!important;box-shadow:var(--ring)!important}
+html body.sa .cap textarea{font-size:16px;line-height:1.5}
+html body.sa .cap .row{border-top:1px solid var(--border);padding-top:10px;margin-top:10px}
+/* --- barre latérale --- */
+html body.sa .side{background:color-mix(in srgb,var(--surface) 70%,var(--bg));border-right:1px solid var(--border);backdrop-filter:none;-webkit-backdrop-filter:none;padding:14px 10px}
+html body.sa .brand{font-size:15px;font-weight:700;letter-spacing:-.02em;padding:6px 8px 12px}
+html body.sa .logo{border-radius:9px;background:linear-gradient(150deg,color-mix(in srgb,var(--accent) 70%,#fff),var(--accent) 60%,color-mix(in srgb,var(--accent) 70%,#000));box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 3px 10px -2px color-mix(in srgb,var(--accent) 55%,transparent)}
+html body.sa .capbtn{background:var(--surface);border:1px solid var(--border-2);border-radius:10px;box-shadow:0 1px 2px rgba(16,24,40,.05)!important;color:var(--text-3);height:36px}
+html body.sa .nav{height:34px;padding:0 10px;border-radius:9px;font-size:14px;font-weight:500;color:var(--text-2);gap:10px;transition:background .12s,color .12s}
+html body.sa .nav svg{color:var(--text-3);width:17px;height:17px}
+html body.sa .nav:hover{background:color-mix(in srgb,var(--text) 5%,transparent);color:var(--text)}
+html body.sa .nav.on{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 2px rgba(16,24,40,.06),0 0 0 1px var(--border)}
+html body.sa .nav.on svg{color:var(--accent)}
+html body.sa .nav .ct{font-size:11.5px;font-weight:600;color:var(--text-3);background:none}
+html body.sa .nav.on .ct{color:var(--text-2)}
+html body.sa .sec{font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);padding:20px 10px 6px}
+/* --- Aujourd'hui --- */
+html body.sa .qk{height:36px;background:var(--surface);border:1px solid var(--border-2);box-shadow:0 1px 2px rgba(16,24,40,.04);border-radius:11px;font-weight:550;color:var(--text)}
+html body.sa .qk .ic2{color:var(--accent)}
+html body.sa .brief{background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface) 55%)}
+html body.sa .brief h3{color:var(--text-2);font-size:12px;letter-spacing:.06em;text-transform:uppercase;font-weight:650}
+html body.sa .stat b{font-size:28px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+html body.sa .stat span{font-size:12px;color:var(--text-2);font-weight:500}
+html body.sa .wl{color:var(--text-3);font-size:11px;letter-spacing:.07em}
+html body.sa .wg{padding:16px 18px}
+/* --- tiroir, feuilles, toasts --- */
+html body.sa .drawer{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:var(--e3)}
+@media(min-width:821px){html body.sa .drawer{width:min(600px,100%);border-radius:0;border-left:1px solid var(--border)}}
+html body.sa .drawer .dh{border-bottom:1px solid var(--border);padding:14px 20px}
+html body.sa .drawer .db{padding:20px 22px}
+html body.sa .scrim.on{background:rgba(10,12,20,.32);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+html body.sa .toast{background:rgba(22,22,26,.92);color:#fff;border-radius:999px;padding:10px 18px;box-shadow:0 12px 32px -8px rgba(0,0,0,.45);font-size:13.5px;border:1px solid rgba(255,255,255,.08)}
+html body.sa .toast button{color:color-mix(in srgb,var(--accent) 70%,#fff);font-weight:650}
+/* --- barre du bas (téléphone) --- */
+@media(max-width:820px){
+ html body.sa .bnav{background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:saturate(180%) blur(22px);-webkit-backdrop-filter:saturate(180%) blur(22px);border-top:1px solid var(--border)}
+ html body.sa .bnav button{color:var(--text-3);font-weight:550}
+ html body.sa .bnav button.on{color:var(--text)}
+ html body.sa .bnav button.on svg{color:var(--accent)}
+ html body.sa .bnav .plus{width:52px;height:52px;border-radius:50%;background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 80%,#fff),var(--accent));box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 10px 24px -6px color-mix(in srgb,var(--accent) 60%,transparent),0 0 0 4px var(--bg)}
+ html body.sa .mtop{background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);border-bottom:1px solid transparent}
+ html body.sa.scrolled .mtop{border-bottom-color:var(--border)}
+ html body.sa .card{padding:16px 16px}
+ html body.sa .item{padding:12px 16px}
+}
+/* --- divers --- */
+html body.sa .empty b{display:block;font-size:16px;font-weight:650;color:var(--text);margin-bottom:4px}
+html body.sa .empty{color:var(--text-2);font-size:14px}
+html body.sa .banner{border-radius:14px;border:1px solid color-mix(in srgb,var(--accent) 20%,transparent);background:color-mix(in srgb,var(--accent) 7%,var(--surface));color:var(--text)}
+html body.sa .firow{padding:13px 18px}
+html body.sa .mdv{font-size:15.5px;line-height:1.65;color:var(--text)}
+html body.sa .mdv .mh1{font-size:22px;font-weight:700;letter-spacing:-.025em}
+html body.sa .mdv .mh2{font-size:18px;font-weight:650;letter-spacing:-.02em}
+html body.sa .mdv .mh3{font-size:15.5px;font-weight:650}
+html body.sa .toc{background:var(--surface-2);border:0!important;box-shadow:none!important}
+html body.sa #selbar{border:1px solid var(--border);border-radius:16px;box-shadow:var(--e2)}
+html body.sa *{scrollbar-width:thin;scrollbar-color:var(--surface-3) transparent}
+html body.sa ::-webkit-scrollbar{width:8px;height:8px}html body.sa ::-webkit-scrollbar-thumb{background:var(--surface-3);border-radius:4px}html body.sa ::-webkit-scrollbar-track{background:transparent}
+html body.sa a.btn{text-decoration:none}
+html body.sa :focus-visible{outline:2px solid color-mix(in srgb,var(--accent) 60%,transparent);outline-offset:2px}
+html body.sa textarea.meet{font-family:inherit;font-size:16px;line-height:1.65}
+html body.sa .cap .hint{display:none}
+html body.sa .ringw{transform:scale(.9);transform-origin:top right}
+html body.sa .drawer .dh .chip,html body.sa .drawer .dh .crumb{font-size:12px}
+html body.sa .item{background:var(--surface)}
+html body.sa .item:hover{background:color-mix(in srgb,var(--text) 3%,var(--surface))}
+#kms[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -1177,7 +1304,7 @@ V.carnet=()=>{
  ${K.map(([k,l,d])=>{const ss=spaces().filter(s=>s.kind===k);if(!ss.length&&k==="archive")return"";return `<div class="grp">${l} <span style="text-transform:none;letter-spacing:0;font-weight:400">· ${d}</span></div><div class="grid">${ss.map(s=>{const its=items().filter(i=>i.space===s.id);const nx=its.filter(i=>i.type==="task"&&i.status==="todo").sort(byDue)[0];
  return `<button class="sp" data-space="${s.id}"><h4><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</h4>${k==="project"?(()=>{const st=projStats(s.id);return progBar(st.d,st.t)})():""}${s.goal?`<p>${esc(s.goal)}</p>`:""}<div class="na">${k==="project"?(nx?`→ ${esc(nx.title)}`:`<span class="warnpill" data-addnext="${s.id}">⚠ Sans prochaine action · <u>+ Ajouter</u></span>`):`${its.length} élément${its.length>1?"s":""}`}</div></button>`}).join("")||`<div class="empty" style="padding:12px;text-align:left">Aucun. <button class="tool" data-act="newspace" data-kind="${k}">+ Créer</button></div>`}</div>`}).join("")}
  ${(()=>{const ns=items().filter(i=>!i.space&&i.status!=="inbox"&&(i.status!=="done"||i.type!=="task"));return ns.length?`<div class="grp">Rangés sans espace <span class="n">${ns.length}</span></div>${listHTML(ns.slice(0,50))}`:""})()}
- <div class="grp">Personnes <button class="tool" style="margin-left:auto;text-transform:none;letter-spacing:0" data-act="newperson">+ Personne</button></div><div class="grid">${people().map(p=>`<button class="sp person" data-person="${p.id}"><span class="av" style="background:${p.color}">${esc(p.name[0])}</span><div><b>${esc(p.alias||p.name)}</b><p style="margin:0">${esc([p.role,p.org].filter(Boolean).join(" · ")||"—")}</p></div></button>`).join("")||'<div class="empty" style="padding:12px">Tape @nom dans une capture pour créer un contact.</div>'}</div>`;
+ <div class="grp">Personnes <button class="tool" style="margin-left:auto;text-transform:none;letter-spacing:0" data-act="newperson">+ Personne</button></div><div class="grid">${people().map(p=>`<button class="sp person" data-person="${p.id}"><span class="av" style="background:${p.color}">${esc(p.name[0])}</span><div><b>${esc(p.alias||p.name)}</b><p style="margin:0">${esc([p.role,p.org].filter(Boolean).join(" · ")||p.email||"")}</p></div></button>`).join("")||'<div class="empty" style="padding:12px">Tape @nom dans une capture pour créer un contact.</div>'}</div>`;
 };
 V.space=()=>{
  const s=sp(U.space);if(!s)return`<div class="empty"><b>Espace introuvable.</b></div>`;
@@ -2260,7 +2387,7 @@ function evNote(id){let ev=null;Object.values(GCAL.by).forEach(m=>m.ev.forEach(e
 function nextMeeting(){const now=new Date();const L=eventsOn(today0()).filter(e=>!e.allDay&&e.end>now);return L[0]||null}
 function meetLine(){if(!ST.settings.calOn)return"";const m=nextMeeting();if(!m)return"";const mins=Math.round((m.start-new Date())/60000);
  return `<p style="margin-top:6px;font-size:14px">📅 ${mins<=0?"En cours":"Prochaine réunion"} : <b>${hm(m.start)} ${esc(m.title)}</b>${mins>0?` <span class="sub">(dans ${mins<60?mins+" min":Math.floor(mins/60)+" h "+pad2(mins%60)})</span>`:""}</p>`}
-function todayMeetings(){if(!CAP.mcp)return"";if(!ST.settings.calOn)return `<div class="calcta"><span>📅 Voir tes réunions Google ou Outlook ici et dans le Calendrier</span><button class="btn" data-act="calon">Afficher</button></div>`;
+function todayMeetings(){if(!CAP.mcp)return"";if(!ST.settings.calOn)return `<div class="calcta"><span>📅 Voir tes réunions ici et dans le Calendrier</span><button class="btn" data-act="calon">Afficher</button></div>`;
  const k=monthKey(new Date());if(!GCAL.by[k]&&!GCAL.busy[k]&&!GCAL.err)setTimeout(()=>loadCal(new Date()),0);
  const L=eventsOn(today0());if(GCAL.err)return `<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ou reconnecte ton compte pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} <button class="tool" data-act="calreload">Réessayer</button></div>`;
  return `<div class="grp">Réunions aujourd'hui <span class="n">${L.length}</span>${GCAL.busy[k]?'<span class="sub" style="text-transform:none;letter-spacing:0">· chargement…</span>':""}</div>${L.length?`<div class="list evl">${L.map(e=>evRow(e)).join("")}</div>`:GCAL.busy[k]?"":`<div class="empty" style="padding:14px">Aucune réunion aujourd'hui.</div>`}`}
@@ -2271,7 +2398,7 @@ V.cal=()=>{const b=today0();b.setDate(1);b.setMonth(b.getMonth()+U.calM);const y
  if(ST.settings.calOn&&CAP.mcp){const k=monthKey(b);if(!GCAL.by[k]&&!GCAL.busy[k])setTimeout(()=>loadCal(new Date(b)),0)}
  const k=monthKey(b);const busy=GCAL.busy[k];
  const its=items().filter(i=>i.due&&!i.deletedAt);const byD=d=>its.filter(i=>new Date(i.due).toDateString()===d.toDateString()).sort((a,c)=>new Date(a.due)-new Date(c.due));
- const head=`<div class="hdr"><div><h1>${cap1(MOIS[mo])} ${y}</h1><div class="sub">${ST.settings.calOn?`Tâches + réunions Google ou Outlook${busy?" · chargement…":GCAL.by[k]?" · à jour "+hm(new Date(GCAL.by[k].at)):""}`:"Tout ce qui a une date."}</div></div><div class="act"><div class="seg"><button class="${U.calV==="month"?"on":""}" data-calv="month">Mois</button><button class="${U.calV==="agenda"?"on":""}" data-calv="agenda">Agenda</button></div><button class="btn" data-calm="-1" aria-label="Mois précédent">←</button><button class="btn" data-calm="0">Auj.</button><button class="btn" data-calm="1" aria-label="Mois suivant">→</button>${ST.settings.calOn?`<button class="btn" data-act="calreload" title="Recharger l'agenda">↻</button>`:""}</div></div>
+ const head=`<div class="hdr"><div><h1>${cap1(MOIS[mo])} ${y}</h1><div class="sub">${ST.settings.calOn?`Tâches et réunions de ton agenda${busy?" · chargement…":GCAL.by[k]?" · à jour "+hm(new Date(GCAL.by[k].at)):""}`:"Tout ce qui a une date."}</div></div><div class="act"><div class="seg"><button class="${U.calV==="month"?"on":""}" data-calv="month">Mois</button><button class="${U.calV==="agenda"?"on":""}" data-calv="agenda">Agenda</button></div><button class="btn" data-calm="-1" aria-label="Mois précédent">←</button><button class="btn" data-calm="0">Auj.</button><button class="btn" data-calm="1" aria-label="Mois suivant">→</button>${ST.settings.calOn?`<button class="btn" data-act="calreload" title="Recharger l'agenda">↻</button>`:""}</div></div>
  ${CAP.mcp&&!ST.settings.calOn?`<div class="calcta"><span>📅 Ajouter tes réunions Google ou Outlook, en lecture seule</span><button class="btn pri" data-act="calon">Afficher mes réunions</button></div>`:""}
  ${GCAL.err?`<div class="banner">${GCAL.err==="needs_reauth"||GCAL.err==="not_configured"||GCAL.err==="consent_required"?"Connecte ou reconnecte ton compte pour voir tes réunions.":"Agenda indisponible ("+esc(GCAL.err)+")."} Vérifie la connexion à ton compte Google. <button class="tool" data-act="calreload">Réessayer</button></div>`:""}`;
  if(U.calV==="agenda"){const start=U.calM?new Date(y,mo,1):today0();const end=new Date(start);end.setDate(end.getDate()+(U.calM?new Date(y,mo+1,0).getDate():21));const out=[];
@@ -2762,7 +2889,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
  if(d.mtag){const m=U.mail;if(!m)return;putSettings({mailTags:{...(ST.settings.mailTags||{}),[m.id]:d.mtag}});drawMail();return}
  if(d.evprep){e.stopPropagation();return prepMeeting(d.evprep)}
  if(d.act==="mdpick")return myDaySheet();
- if(d.act==="mdsave"){putSettings({myday:{date:ymd(new Date()),ids:[...U.mdSel]}});closeDrawer();return toast("Ma journée : "+U.mdSel.size+" tâche(s)")}
+ if(d.act==="mdsave"){putSettings({myday:{date:ymd(new Date()),ids:[...U.mdSel]}});closeDrawer();return toast(U.mdSel.size?"Ma journée : "+U.mdSel.size+(U.mdSel.size>1?" tâches":" tâche"):"Ma journée vidée")}
  if(d.act==="mdgo"){const id=myDay().find(x=>ST.items.get(x).status!=="done");if(id)openFocus(id);return}
  if(d.act==="kc_theirs"){U.edBase=null;const id=U.sel;openItem(id);return}
  if(d.act==="kc_mine"){const c=U.conflict;if(c){const cur=ST.items.get(U.sel);U.edBase={id:cur.id,updatedAt:cur.updatedAt,body:cur.body||"",title:cur.title};U.flush&&U.flush();const ed=$("#edb");if(ed)putItem({...ST.items.get(U.sel),body:ed.value,title:($("#edt")||{}).value||cur.title})}$("#kconf")&&$("#kconf").remove();return toast("Ta version est gardée")}
@@ -2815,7 +2942,7 @@ document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.c
 {const _r2=render;render=function(){document.body.dataset.view=U.view;_r2();checkConflict();if(ST.mode==="db")authPill();if(U.view==="search"){const sq=$("#sq");if(sq&&sq.value)searchMore(sq.value)}}}
 {const _vs2=V.settings;V.settings=()=>_vs2().replace('<div class="card"><b>Données</b>',`<div class="card"><b>Système</b><p class="cardsub">Santé de l'app, rappels, affichage.</p><div class="frow"><button class="btn" data-nav="etat">${ICN.shield} État du système</button><button class="btn" data-act="remind">${ICN.bell} ${ST.settings.remind&&typeof Notification!=="undefined"&&Notification.permission==="granted"?"Rappels activés ✓":"Activer les rappels"}</button><button class="btn" data-act="sidecol">${ICN.side} ${ST.settings.sideCol?"Déplier":"Replier"} la barre latérale</button></div><p class="cardsub" style="margin-top:8px">Rappels : tâches avec une heure et 10 min avant chaque réunion, tant que Kennach est ouvert (limite iPhone : pas de rappel app fermée).</p><p class="cardsub">Capture rapide depuis un raccourci iPhone : ouvrir l'URL <code>${esc(location.origin+location.pathname)}?cap=TEXTE&amp;save=1</code></p></div><div class="card"><b>Données</b>`)}
 /* --- v8 : import d'un lot .json (fichier local, jamais sur GitHub) --- */
-{const _vs3=V.settings;V.settings=()=>_vs3().replace('<div class="card"><b>Données</b>',`<div class="card"><b>Importer un lot</b><p class="cardsub">Un fichier .json préparé pour Kennach (notes de projet, fiches…). Tu choisis ce que tu gardes avant d'importer.</p><label class="btn" style="display:inline-flex;cursor:pointer">${ICN.folder} Choisir le fichier<input type="file" id="klot" accept=".json,application/json" style="display:none"></label></div><div class="card"><b>Données</b>`)}
+{const _vs3=V.settings;V.settings=()=>_vs3().replace('<div class="card"><b>Données</b>',`<div class="card"><b>Importer un lot</b><p class="cardsub">Un fichier .json préparé pour Kennach (notes de projet, fiches…). Tu choisis ce que tu gardes avant d'importer.</p><button class="btn" data-act="implot">${ICN.folder} Choisir le fichier</button><span class="sub" style="font-size:12px;margin-left:8px">ou glisse le fichier sur la fenêtre</span></div><div class="card"><b>Données</b>`)}
 document.addEventListener("change",async e=>{if(!e.target||e.target.id!=="klot")return;const f=e.target.files&&e.target.files[0];if(!f)return;
  try{const x=JSON.parse(await f.text());if(!x||!Array.isArray(x.items)||!x.items.length)throw new Error("aucun élément");
   const id="lot-"+String(x.id||f.name).replace(/\W/g,"").slice(0,40);
@@ -2885,7 +3012,7 @@ const spKey=n=>norm(n).replace(/[^a-z0-9]/g,"");
  CMDS.splice(2,0,["Fiches","nav:fiches",""],["Ma journée","mdpick",""],["État du système","nav:etat",""],["Importer un lot (.json)","implot",""]);
  const fi=CMDS.find(c=>c[0]==="Afficher mes réunions Google ou Outlook");if(fi)fi[0]="Afficher mes réunions"}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest('[data-act=implot]');if(!t)return;e.stopImmediatePropagation();pickLot()},true);
-function pickLot(){const i=document.createElement("input");i.type="file";i.accept=".json,application/json";i.onchange=()=>{const f=i.files[0];if(f)loadLot(f)};i.click()}
+function pickLot(){let i=document.getElementById("klotpick");if(i)i.remove();i=document.createElement("input");i.type="file";i.id="klotpick";i.accept=".json,application/json";i.style.cssText="position:fixed;left:-9999px;opacity:0";document.body.appendChild(i);i.addEventListener("change",()=>{const f=i.files&&i.files[0];if(f)loadLot(f);setTimeout(()=>i.remove(),0)});i.click()}
 async function loadLot(f){try{const x=JSON.parse(await f.text());if(!x||!Array.isArray(x.items)||!x.items.length)throw new Error("aucun élément");
  const id="lot-"+String(x.id||f.name).replace(/\W/g,"").slice(0,40);
  if((ST.settings.importDone||[]).includes(id)){if(!confirm("Ce lot a déjà été importé. Le reprendre quand même ?"))return;putSettings({importDone:(ST.settings.importDone||[]).filter(z=>z!==id)})}
@@ -2906,6 +3033,8 @@ const SIDE_IC={decisions:IC('<path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 
 const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"éléments"],[/(\b1) relance\(s\) possible\(s\)/g,"$1 relance possible"],[/relance\(s\) possible\(s\)/g,"relances possibles"],[/\b1 personnes\b/g,"1 personne"],[/\b1 espaces\b/g,"1 espace"],[/\b1 éléments\b/g,"1 élément"]];
 {const _r10=render;render=function(){_r10.apply(this,arguments);const v=$("#view");if(!v)return;const w=document.createTreeWalker(v,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){if(/\(s\)|\b1 (personnes|espaces|éléments)\b/.test(n.nodeValue)){let s=n.nodeValue;PLUR.forEach(([a,b])=>s=s.replace(a,b));if(s!==n.nodeValue)n.nodeValue=s}}}}
 {const _rs10=renderSide;renderSide=function(){_rs10();try{if(ST.settings.msClientId)localStorage.setItem("k_ms_on","1")}catch(e){}}}
+/* [42] pluriels aussi dans les messages */
+{const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 
 document.body.classList.add("sa");
 boot();
