@@ -839,11 +839,11 @@ body.sa [data-nav=mails],body.sa [data-nav=veille],body.sa [data-nav=photo],body
 html body.sa{
  --serif:"Cormorant Garamond","Cormorant",Didot,"Bodoni 72","Playfair Display",Georgia,serif;
  --f:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
- --gold:#A8834A;--gold-2:#C9A96E;--gold-3:#E6D3A8;--gold-grad:linear-gradient(135deg,#E9D7AE 0%,#C9A96E 45%,#9C7840 100%);
+ --gold:#8A6830;--gold-2:#A8834A;--gold-3:#E6D3A8;--gold-grad:linear-gradient(135deg,#E9D7AE 0%,#C9A96E 45%,#9C7840 100%);
  --accent:var(--gold);--accent-soft:color-mix(in srgb,var(--gold) 12%,transparent);
- --bg:#F5F0E7;--surface:#FFFCF7;--surface-2:#EFE8DB;--surface-3:#E4DACA;
- --ink:#17130E;--text:#1B1712;--text-2:#6D6252;--text-3:#A4987F;
- --border:rgba(110,86,46,.14);--border-2:rgba(110,86,46,.24);--line:rgba(168,131,74,.35);
+ --bg:#F2EDE3;--surface:#FFFDF9;--surface-2:#EAE2D3;--surface-3:#DDD2BF;
+ --ink:#14100B;--text:#1A150F;--text-2:#4A4134;--text-3:#7C705C;
+ --border:rgba(80,58,24,.16);--border-2:rgba(80,58,24,.30);--line:rgba(140,106,51,.5);
  --e1:0 1px 0 rgba(255,255,255,.7) inset,0 1px 2px rgba(60,40,10,.04);--e2:0 18px 40px -20px rgba(60,40,10,.28);--e3:0 40px 120px -30px rgba(40,25,5,.45),0 0 0 1px var(--border);
  --glow:color-mix(in srgb,#C9A96E 20%,transparent);--glow2:color-mix(in srgb,#B98A6B 10%,transparent);
  --r:16px;font-family:var(--f);font-size:15px;color:var(--text);background:var(--bg);letter-spacing:-.003em;-webkit-font-smoothing:antialiased;font-feature-settings:"ss01","cv05"}
@@ -1018,13 +1018,13 @@ html body.sa .ringw::after{color:var(--text-3);letter-spacing:.14em;text-transfo
 #klogin button{border-radius:999px!important;font-family:inherit!important;font-weight:600!important;letter-spacing:.02em}
 #klogin #kgo{background:linear-gradient(135deg,#E9D7AE,#C9A96E 45%,#9C7840)!important;color:#17130E!important;border:0!important}
 /* v13 */
-@media(max-width:820px){html body.sa .fld,html body.sa select,html body.sa #edb,html body.sa #edt,html body.sa #mt,html body.sa #msp,html body.sa input[type=text],html body.sa input[type=date],html body.sa input[type=time],html body.sa input[type=search],html body.sa textarea{font-size:16px!important}}
+@media(max-width:820px){html body.sa .fld,html body.sa select,html body.sa #edb,html body.sa #mt,html body.sa #msp,html body.sa input[type=text],html body.sa input[type=date],html body.sa input[type=time],html body.sa input[type=search],html body.sa textarea{font-size:16px!important}}
 html body.sa .sw{width:34px!important;height:34px!important}
 html body.sa #mtop b,html body.sa #mtop .mtt{opacity:1!important;font-family:var(--serif);font-size:19px;font-weight:500;font-style:italic;color:var(--ink);letter-spacing:.01em}
 html body.sa #mtop .sync{width:6px;height:6px}
 html body.sa .ttl{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 html body.sa .tri .ttl,html body.sa .tri h2,html body.sa .tricard h2,html body.sa .tricard b:first-child{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
-html:not([data-theme=dark]) body.sa .greet{background:none;-webkit-text-fill-color:var(--gold);color:var(--gold)}
+html.klight body.sa .greet{background:none;-webkit-text-fill-color:var(--gold);color:var(--gold)}
 @media (prefers-color-scheme:dark){html[data-theme=auto] body.sa .greet{background:var(--gold-grad);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}}
 @media(pointer:coarse){html body.sa .nohint-touch{display:none}}
 html body.sa .calcta span{display:inline-flex;align-items:center;gap:8px}
@@ -1046,6 +1046,82 @@ html[data-theme=dark]{background:#0A0908}html[data-theme=light]{background:#F5F0
 html body.sa .chk.done{animation:kpop .35s cubic-bezier(.3,1.6,.5,1)}
 @keyframes kpop{0%{transform:scale(.7)}100%{transform:scale(1)}}
 html body.sa .item.done .ttl{color:var(--text-3);text-decoration:line-through;text-decoration-color:var(--line)}
+/* ===== v14 ===== */
+/* bouton Écrire */
+html body.sa .writebtn{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:22px 24px;margin:0 0 18px;border-radius:20px;border:1px solid transparent;cursor:text;
+ background:linear-gradient(var(--surface),var(--surface)) padding-box,linear-gradient(135deg,var(--line),transparent 40%,transparent 60%,var(--line)) border-box;box-shadow:var(--e1),0 20px 40px -30px rgba(120,90,40,.35);transition:transform .2s,box-shadow .2s}
+html body.sa .writebtn:hover{transform:translateY(-1px);box-shadow:var(--e1),0 26px 50px -28px rgba(120,90,40,.5)}
+html body.sa .wb-ic{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--gold-grad);color:#17130E;flex:none;box-shadow:0 8px 18px -8px rgba(168,131,74,.8)}
+html body.sa .wb-t{font-family:var(--serif);font-size:28px;font-style:italic;font-weight:500;color:var(--ink);letter-spacing:-.005em}
+html body.sa .wb-s{margin-left:auto;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);font-weight:600}
+@media(max-width:820px){html body.sa .wb-s{display:none}html body.sa .wb-t{font-size:26px}html body.sa .writebtn{padding:18px 20px}}
+/* cartes de notes */
+html body.sa .ngrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+html body.sa .nrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:8px}
+@media(max-width:820px){html body.sa .nrow{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px 8px;padding:2px 18px 8px;scrollbar-width:none}html body.sa .nrow::-webkit-scrollbar{display:none}html body.sa .nrow .ncard{flex:0 0 70%;scroll-snap-align:start}html body.sa .ngrid{grid-template-columns:1fr}}
+html body.sa .ncard{display:flex;flex-direction:column;gap:8px;text-align:left;padding:18px 20px;border-radius:16px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--e1);transition:border-color .2s,transform .2s;min-height:120px;color:inherit}
+html body.sa .ncard.sm{min-height:92px}
+html body.sa .ncard:hover{border-color:var(--line);transform:translateY(-1px)}
+html body.sa .ncard-t{font-family:var(--serif);font-size:21px;font-weight:500;line-height:1.2;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+html body.sa .ncard-s{font-size:13.5px;line-height:1.55;color:var(--text-2);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+html body.sa .ncard-m{margin-top:auto;font-size:11.5px;color:var(--text-3);display:flex;align-items:center;gap:6px;font-weight:500}
+html body.sa .ncard .dot,html body.sa .tool .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+html body.sa .npin{color:var(--gold);margin-right:6px;font-size:10px;vertical-align:middle}
+html body.sa .nsearch{margin-bottom:12px}
+html body.sa .nfil{margin-bottom:22px;display:flex;flex-wrap:wrap;gap:8px}
+/* page d'écriture */
+html body.sa .drawer.compose{display:flex;flex-direction:column}
+@media(min-width:821px){html body.sa .drawer.compose{width:min(820px,calc(100% - 28px))}}
+@media(max-width:820px){html body.sa .drawer.compose{top:0!important;height:auto!important;max-height:none!important;bottom:var(--kb,0px)!important;border-radius:0!important;border:0}}
+html body.sa .drawer.compose::before{display:none}
+html body.sa .cmp-top{display:flex;align-items:center;gap:10px;padding:12px 16px calc(12px) 16px;padding-top:calc(12px + env(safe-area-inset-top));border-bottom:1px solid var(--border)}
+html body.sa .cmp-x{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--text-2);border:1px solid var(--border)}
+html body.sa .cmp-st{flex:1;text-align:center;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-3);font-weight:600}
+html body.sa .cmp-done{height:38px}
+html body.sa .cmp-db{flex:1;overflow:auto;padding:22px 26px calc(30px + env(safe-area-inset-bottom))!important}
+html body.sa .cmp-sp{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;margin-bottom:18px}
+html body.sa .cmp-sp::-webkit-scrollbar{display:none}html body.sa .cmp-sp .tool{flex:none}
+html body.sa .cmp-t{width:100%;border:0;outline:0;background:transparent;font-family:var(--serif)!important;font-size:36px!important;font-weight:500;color:var(--ink);padding:4px 0 10px;letter-spacing:-.01em}
+html body.sa .cmp-t::placeholder{color:var(--text-3);font-style:italic}
+html body.sa .cmp-b{width:100%;border:0;outline:0;background:transparent;resize:none;font-family:var(--f);font-size:17px!important;line-height:1.75;color:var(--text);min-height:260px}
+html body.sa .cmp-b::placeholder{color:var(--text-3)}
+html body.sa .cmp-tools{display:flex;flex-wrap:wrap;gap:8px;border-top:1px solid var(--border);padding-top:14px;margin-top:10px}
+html body.sa .cmp-date{position:relative;cursor:pointer}html body.sa .cmp-date input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+/* options repliées dans une note */
+html body.sa details.edmore{margin-top:18px;border-top:1px solid var(--border);padding-top:12px}
+html body.sa details.edmore>summary{cursor:pointer;list-style:none;font-size:13px;font-weight:600;color:var(--ink);display:flex;gap:10px;align-items:baseline}
+html body.sa details.edmore>summary::-webkit-details-marker{display:none}
+html body.sa details.edmore>summary::before{content:"+";color:var(--gold);font-size:16px}
+html body.sa details.edmore[open]>summary::before{content:"–"}
+html body.sa details.edmore>summary span{font-weight:500;color:var(--text-3);font-size:12px}
+/* menu : Plus */
+html body.sa .sidemore{display:none}html body.sa .sidemore.on{display:block}
+html body.sa .moret{margin-top:18px}
+html body.sa .mbtns{display:flex;flex-wrap:wrap;gap:8px}
+/* syntaxe retirée */
+html body.sa #capchips,html body.sa #qchips{display:none!important}
+/* ===== mode sombre poussé plus loin ===== */
+html[data-theme=dark] body.sa .hdr h1,html[data-theme=dark] body.sa .date-big{background:linear-gradient(180deg,#FBF6EC 30%,#D9C08F 120%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+html[data-theme=dark] body.sa .card,html[data-theme=dark] body.sa .wg,html[data-theme=dark] body.sa .list,html[data-theme=dark] body.sa .ncard,html[data-theme=dark] body.sa .writebtn{box-shadow:inset 0 1px 0 rgba(233,215,174,.07),0 30px 60px -40px rgba(0,0,0,.9)!important}
+html[data-theme=dark] body.sa .card,html[data-theme=dark] body.sa .wg,html[data-theme=dark] body.sa .ncard{background:linear-gradient(180deg,#15130F,#100E0C)}
+html[data-theme=dark] body.sa .writebtn{background:linear-gradient(180deg,#17140F,#100E0B) padding-box,linear-gradient(135deg,rgba(233,215,174,.5),rgba(201,169,110,.05) 40%,rgba(201,169,110,.05) 60%,rgba(233,215,174,.4)) border-box}
+html[data-theme=dark] body.sa #view::before{height:640px;background:radial-gradient(55% 50% at 30% 35%,rgba(201,169,110,.17),transparent 70%),radial-gradient(40% 40% at 80% 25%,rgba(150,90,60,.12),transparent 70%)}
+html[data-theme=dark] body.sa .nav.on{background:linear-gradient(90deg,rgba(201,169,110,.16),rgba(201,169,110,.03));box-shadow:inset 2px 0 0 #C9A96E}
+html[data-theme=dark] body.sa .side{background:linear-gradient(180deg,#0E0C0A,#0A0908)}
+@media (prefers-color-scheme:dark){html[data-theme=auto] body.sa .hdr h1,html[data-theme=auto] body.sa .date-big{background:linear-gradient(180deg,#FBF6EC 30%,#D9C08F 120%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+ html[data-theme=auto] body.sa .card,html[data-theme=auto] body.sa .wg,html[data-theme=auto] body.sa .ncard{background:linear-gradient(180deg,#15130F,#100E0C);box-shadow:inset 0 1px 0 rgba(233,215,174,.07),0 30px 60px -40px rgba(0,0,0,.9)!important}
+ html[data-theme=auto] body.sa .nav.on{background:linear-gradient(90deg,rgba(201,169,110,.16),rgba(201,169,110,.03));box-shadow:inset 2px 0 0 #C9A96E}}
+/* ===== mode clair : lisible ===== */
+html.klight body.sa .grp,html.klight body.sa .sec,html.klight body.sa .wl,html.klight body.sa .lbl2{color:#6B604D!important}
+html.klight body.sa .tool{color:var(--text);border-color:var(--border-2)}
+html.klight body.sa .nav{color:#3E362B}
+html.klight body.sa .nav svg{color:#7C705C}
+html.klight body.sa .card,html.klight body.sa .wg,html.klight body.sa .ncard,html.klight body.sa .list{box-shadow:0 1px 2px rgba(60,40,10,.06),0 12px 30px -24px rgba(60,40,10,.25)!important}
+html.klight body.sa #view::before{opacity:.65}
+html.klight body.sa::after{opacity:.025}
+html.klight body.sa .tool.on,html.klight body.sa .pick .tool.on{color:var(--bg)!important}
+html body.sa .tool.mdi{font-family:var(--f)!important;letter-spacing:0}
+html body.sa .ed-t{font-family:var(--serif)!important;font-size:30px!important;font-weight:500}
 </style>
 </head>
 <body>
@@ -1240,13 +1316,13 @@ function guess(i){
 
 /* ================= état UI + navigation ================= */
 const U={view:"today",space:null,person:null,sel:null,jday:0,meet:null,edMode:{}};
-const VIEWS=["tasks","today","inbox","tri","upcoming","waiting","carnet","journal","decisions","meeting","search","settings","trash","ask","photo","mails","veille","review","import","cal","fiches","etat"];
+const VIEWS=["tasks","today","inbox","tri","upcoming","waiting","carnet","journal","decisions","meeting","search","settings","trash","ask","photo","mails","veille","review","import","cal","fiches","etat","notes"];
 function nav(v,arg){if($("#drawer").classList.contains("on"))closeDrawer();if($("#pal").classList.contains("on"))closePal();U.view=v;if(v==="space")U.space=arg;if(v==="person")U.person=arg;
  if(VIEWS.includes(v)){try{history.replaceState(null,"","#"+v)}catch(e){}}
  render();const m=$("#main");if(m)m.scrollTop=0}
 let rq=false;function schedule(){if(rq)return;rq=true;requestAnimationFrame(()=>{rq=false;render()})}
 const counts=()=>{const a=items();return{inbox:a.filter(i=>i.status==="inbox").length,wait:a.filter(i=>i.status==="waiting").length,late:a.filter(i=>open_(i)&&i.due&&diffD(i.due)<0&&i.status!=="someday").length}};
-const V_TITLE={today:"",inbox:"· Boîte",tri:"· Trier",tasks:"· Mes tâches",upcoming:"· À venir",waiting:"· En attente",carnet:"· Carnet",space:"· Espace",person:"· Personne",journal:"· Journal",decisions:"· Décisions",meeting:"· Réunion",search:"· Chercher",settings:"· Réglages",trash:"· Corbeille",ask:"· Demande",photo:"· Photo",mails:"· Mails",veille:"· Veille",review:"· Revue",import:"· Import",cal:"· Calendrier",fiches:"· Fiches",etat:"· État"};
+const V_TITLE={today:"",inbox:"· Boîte",tri:"· Trier",tasks:"· Mes tâches",upcoming:"· À venir",waiting:"· En attente",carnet:"· Carnet",space:"· Espace",person:"· Personne",journal:"· Journal",decisions:"· Décisions",meeting:"· Réunion",search:"· Chercher",settings:"· Réglages",trash:"· Corbeille",ask:"· Demande",photo:"· Photo",mails:"· Mails",veille:"· Veille",review:"· Revue",import:"· Import",cal:"· Calendrier",fiches:"· Fiches",etat:"· État",notes:"· Notes",carnet:"· Projets",meeting:"· Réunion",tasks:"· Tâches"};
 const MORE_V=["fiches","cal","tasks","upcoming","waiting","search","ask","photo","mails","veille","journal","decisions","meeting","review","settings","trash","import"];
 function moreSheet(){
  const c=counts();const b=(v,ic,l,sub,badge)=>`<button class="sp" style="display:flex;gap:12px;align-items:center;padding:12px 14px" data-nav="${v}"><span class="ic" style="width:24px;height:24px">${ic}</span><div style="flex:1;min-width:0"><b style="font-size:15px">${l}</b><p style="margin:0">${sub}</p></div>${badge?`<span class="chip t-task">${badge}</span>`:""}</button>`;
@@ -1260,14 +1336,13 @@ function renderSide(){
  const c=counts();const n=(v,ic,l,ct,hot)=>`<button class="nav ${U.view===v?"on":""}" data-nav="${v}">${ic}<span class="lbl">${l}</span>${ct!=null?`<span class="ct ${hot&&ct?"hot":""}">${ct||""}</span>`:""}</button>`;
  const projs=spaces().filter(s=>s.kind==="project");
  $("#side").innerHTML=`<div class="brand"><div class="logo">K</div><span>Kennach</span></div>
- <button class="capbtn" data-act="cap">${I.plus}<span>Capturer…</span><kbd>C</kbd></button>
- ${n("today",I.sun,"Aujourd'hui",c.late||null)}${n("inbox",I.inbox,"Boîte",c.inbox,true)}${n("tasks",I.check.replace(/12/g,"18").replace("stroke-width=\"3.2\"","stroke=\"currentColor\" stroke-width=\"2\""),"Toutes mes tâches")}${n("upcoming",I.cal,"À venir")}${n("cal",I.cal,"Calendrier")}${n("waiting",I.wait,"En attente de",c.wait)}${n("carnet",I.book,"Carnet")}
+ <button class="capbtn" data-act="cap">${I.plus}<span>Écrire…</span><kbd>C</kbd></button>
+ ${n("today",I.sun,"Aujourd'hui",c.late||null)}${n("notes",I.note,"Notes")}${n("tasks",I.check.replace(/12/g,"18").replace("stroke-width=\"3.2\"","stroke=\"currentColor\" stroke-width=\"2\""),"Tâches")}${n("carnet",I.book,"Projets")}${n("meeting",I.meet,"Réunion")}${n("fiches",I.book,"Fiches")}
  ${projs.length?`<div class="sec">Projets</div>${projs.map(s=>`<button class="nav ${U.view==="space"&&U.space===s.id?"on":""}" data-space="${s.id}"><span class="dot" style="background:${s.color}"></span><span class="lbl">${esc(s.name)}</span><span class="ct">${items().filter(i=>i.space===s.id&&open_(i)&&i.type==="task").length||""}</span></button>`).join("")}`:""}
- <div class="sec">Outils</div>${n("ask",I.spark,"Demande au carnet")}${n("photo",I.cam,"Photo du cahier")}${n("mails",I.mail,"Mails")}${n("fiches",I.book,"Fiches")}${n("veille",I.globe,"Veille",vCrit()||null,true)}${SHARED.imports.size?n("import",I.inbox,"Import",SHARED.imports.size,true):""}
- <div class="sec">Flux</div>${n("journal",I.cal,"Journal du jour")}${n("decisions",I.dec,"Décisions")}${n("meeting",I.meet,"Mode réunion")}${n("review",I.star,"Revue hebdo")}${n("settings",I.star,"Réglages")}
+ <button class="nav moret" data-act="sidemore">${I.menu}<span class="lbl">${U.sideMore?"Moins":"Plus"}</span>${!U.sideMore&&c.inbox?`<span class="ct">${c.inbox}</span>`:""}</button><div class="sidemore ${U.sideMore?"on":""}">${n("inbox",I.inbox,"Boîte",c.inbox,true)}${n("upcoming",I.cal,"À venir")}${n("cal",I.cal,"Calendrier")}${n("waiting",I.wait,"En attente de",c.wait)}${n("journal",I.cal,"Journal du jour")}${n("decisions",I.dec,"Décisions")}${n("review",I.star,"Revue hebdo")}${n("mails",I.mail,"Mails")}${SHARED.imports.size?n("import",I.inbox,"Import",SHARED.imports.size,true):""}${n("settings",I.star,"Réglages")}</div>
  <div class="foot"><span class="sync" id="syncdot"></span><span id="synctxt"></span><button style="margin-left:auto" data-act="theme" title="Thème">${I.moon}</button></div>`;
  const bt=(v,ic,l,badge)=>`<button class="${U.view===v?"on":""}" data-nav="${v}">${ic}<span>${l}</span>${badge?`<span class="badge">${badge}</span>`:""}</button>`;
- $("#bnav").innerHTML=bt("today",I.sun,"Aujourd'hui")+bt("inbox",I.inbox,"Boîte",c.inbox)+`<button data-act="cap" aria-label="Capturer"><span class="plus">${I.plus}</span></button>`+bt("carnet",I.book,"Carnet")+`<button class="${MORE_V.includes(U.view)?"on":""}" data-act="more">${I.menu}<span>Plus</span></button>`;
+ $("#bnav").innerHTML=bt("today",I.sun,"Aujourd'hui")+bt("notes",I.note,"Notes")+`<button data-act="cap" aria-label="Écrire"><span class="plus">${I.plus}</span></button>`+bt("tasks",I.check.replace(/12/g,"18").replace("stroke-width=\"3.2\"","stroke=\"currentColor\" stroke-width=\"2\""),"Tâches")+`<button class="${MORE_V.includes(U.view)?"on":""}" data-act="more">${I.menu}<span>Plus</span></button>`;
  $("#mtop").innerHTML=`<div class="logo">K</div><b>Kennach</b><span class="sync" id="syncdot2" style="margin-left:6px"></span><span style="color:var(--text-2);font-size:14px;margin-left:4px"><b class="mtt">${esc((V_TITLE[U.view]||"").replace(/^·\s*/,""))}</b></span><div class="x"><button data-nav="search" aria-label="Chercher">${I.search}</button><button data-act="theme" aria-label="Thème">${I.moon}</button></div>`;
  setSync();const d2=$("#syncdot2");if(d2)d2.className=$("#syncdot").className;
 }
@@ -1385,7 +1460,7 @@ V.waiting=()=>{
 };
 V.carnet=()=>{
  const K=[["project","Projets","Un résultat, une fin"],["area","Domaines","À entretenir, sans fin"],["resource","Ressources","À consulter"],["archive","Archives","Terminé ou en pause"]];
- return `<div class="hdr"><div><h1>Carnet</h1><div class="sub">Rangé par actionnabilité (PARA)</div></div><div class="act"><button class="btn" data-act="newspace">+ Espace</button></div></div>
+ return `<div class="hdr"><div><h1>Projets</h1><div class="sub">Tes projets, tes domaines et tes ressources.</div></div><div class="act"><button class="btn" data-act="newspace">+ Espace</button></div></div>
  ${(()=>{const pn=items().filter(i=>i.pinned&&!(i.type==="task"&&i.status==="done"));return pn.length?`<div class="grp">📌 Épinglés <span class="n">${pn.length}</span></div>${listHTML(pn)}`:""})()}
  ${K.map(([k,l,d])=>{const ss=spaces().filter(s=>s.kind===k);if(!ss.length&&k==="archive")return"";return `<div class="grp">${l} <span style="text-transform:none;letter-spacing:0;font-weight:400">· ${d}</span></div><div class="grid">${ss.map(s=>{const its=items().filter(i=>i.space===s.id);const nx=its.filter(i=>i.type==="task"&&i.status==="todo").sort(byDue)[0];
  return `<button class="sp" data-space="${s.id}"><h4><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</h4>${k==="project"?(()=>{const st=projStats(s.id);return progBar(st.d,st.t)})():""}${s.goal?`<p>${esc(s.goal)}</p>`:""}<div class="na">${k==="project"?(nx?`→ ${esc(nx.title)}`:`<span class="warnpill" data-addnext="${s.id}">⚠ Sans prochaine action · <u>+ Ajouter</u></span>`):`${its.length} élément${its.length>1?"s":""}`}</div></button>`}).join("")||`<div class="empty" style="padding:12px;text-align:left">Aucun. <button class="tool" data-act="newspace" data-kind="${k}">+ Créer</button></div>`}</div>`}).join("")}
@@ -1538,8 +1613,8 @@ function openItem(id){
  <div class="db">
  ${it.status==="inbox"?`<div class="banner" style="margin-bottom:12px">Cet élément est dans ta <b>Boîte</b>. Écris ce que tu veux dedans, puis choisis plus bas <b>où le ranger</b>.</div>`:""}
  <input class="ed-t" id="edt" value="${esc(it.title)}" placeholder="Titre">
- <div class="edtabs"><div class="seg"><button class="${em==="read"?"on":""}" data-edm="read">Aperçu</button><button class="${em==="write"?"on":""}" data-edm="write">Écrire</button></div>${cs.t?`<span class="m prog ${cs.d===cs.t?"ok":""}" style="margin-left:6px"><i style="width:${Math.round(cs.d/cs.t*100)}%"></i>☑ ${cs.d}/${cs.t}</span>`:""}<span style="flex:1"></span>${em==="write"?[["☐","- [ ] ","Étape à cocher"],["H","## ","Titre"],["B","**gras**","Gras"],["•","- ","Liste"],["{ }","```\n\n```","Bloc de code"],["[[","[[]]","Lien vers une note"]].map(([l,v,ti])=>`<button class="tool mdi" data-mdins="${esc(v)}" title="${ti}">${esc(l)}</button>`).join(""):""}</div>
- ${em==="write"?`<textarea class="ed-b" id="edb" style="min-height:220px;border:1px solid var(--border);border-radius:12px;padding:10px 12px" placeholder="Écris ici : détails, étapes, infos utiles…&#10;- [ ] une étape à cocher&#10;## un titre&#10;[[Titre d'une autre note]] pour la lier">${esc(it.body||"")}</textarea>`:`<div class="mdv edv" data-edm="write" title="Clique pour écrire">${it.body&&it.body.trim()?md(it.body,{toc:true}):'<span class="sub">Vide. Clique ici pour écrire.</span>'}</div>`}<div class="secwarn" id="secw"></div>
+ <div class="edtabs"><div class="seg"><button class="${em==="read"?"on":""}" data-edm="read">Aperçu</button><button class="${em==="write"?"on":""}" data-edm="write">Écrire</button></div>${cs.t?`<span class="m prog ${cs.d===cs.t?"ok":""}" style="margin-left:6px"><i style="width:${Math.round(cs.d/cs.t*100)}%"></i>☑ ${cs.d}/${cs.t}</span>`:""}<span style="flex:1"></span>${em==="write"?[["☐ Case à cocher","- [ ] ","Case à cocher"],["• Liste","- ","Liste"]].map(([l,v,ti])=>`<button class="tool mdi" data-mdins="${esc(v)}" title="${ti}">${esc(l)}</button>`).join(""):""}</div>
+ ${em==="write"?`<textarea class="ed-b" id="edb" style="min-height:220px;border:1px solid var(--border);border-radius:12px;padding:10px 12px" placeholder="Écris ici, comme dans ton cahier…">${esc(it.body||"")}</textarea>`:`<div class="mdv edv" data-edm="write" title="Clique pour écrire">${it.body&&it.body.trim()?md(it.body,{toc:true}):'<span class="sub">Vide. Clique ici pour écrire.</span>'}</div>`}<div class="secwarn" id="secw"></div>
  ${filesHTML(it)}
  <div class="aitools"><button class="tool" data-act="attachf">📎 Joindre</button>${CAP.sample&&it.body?`<button class="tool" data-act="extract">✦ Extraire les actions</button>`:""}<button class="tool" data-act="focus">◎ Focus 25 min</button><button class="tool" data-act="history">↶ Historique${nv?" ("+nv+")":""}</button><button class="tool" data-act="tplsave">⧉ Enregistrer comme modèle</button></div>
  ${links.length?`<div class="backl">Liens : ${links.map(l=>{const t=items().find(x=>x.title===l);return t?`<a data-open="${t.id}">${esc(l)}</a>`:`<a data-mklink="${esc(l)}">${esc(l)} (créer)</a>`}).join(", ")}</div>`:""}
@@ -3122,7 +3197,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="13";
+const KVER="14";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3147,7 +3222,7 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
  /* [81] fiches chargées en arrière-plan pour le widget */
  try{if(accounts().some(a=>a.roles.fiches)&&U.fi&&U.fi.files===null){if(typeof fiLoadCache==="function")fiLoadCache();if(!U.fi.files&&typeof fiRefresh==="function")setTimeout(()=>fiRefresh(false),4000)}}catch(e){}}}
 /* [76] couleur de la barre d'état du téléphone = thème */
-function syncThemeColor(){const m=document.querySelector('meta[name=theme-color]');if(!m)return;const bg=getComputedStyle(document.body).getPropertyValue("--bg").trim()||"#0A0908";if(m.content!==bg)m.content=bg}
+function syncThemeColor(){try{const dk=effTheme()==="dark";document.documentElement.classList.toggle("klight",!dk);document.documentElement.classList.toggle("kdark",dk)}catch(e){}const m=document.querySelector('meta[name=theme-color]');if(!m)return;const bg=getComputedStyle(document.body).getPropertyValue("--bg").trim()||"#0A0908";if(m.content!==bg)m.content=bg}
 {const _r14=render;render=function(){_r14.apply(this,arguments);syncThemeColor()}}
 /* [77] le clavier ne cache plus le bouton Enregistrer */
 if(window.visualViewport){const kb=()=>{const v=visualViewport;const h=Math.max(0,innerHeight-v.height-v.offsetTop);document.documentElement.style.setProperty("--kb",h>60?h+"px":"0px");document.body.classList.toggle("kbopen",h>60)};visualViewport.addEventListener("resize",kb);visualViewport.addEventListener("scroll",kb)}
@@ -3156,6 +3231,85 @@ document.addEventListener("focusin",e=>{if(innerWidth<=820&&/INPUT|TEXTAREA|SELE
 document.addEventListener("focusout",()=>setTimeout(()=>{const a=document.activeElement;if(!a||!/INPUT|TEXTAREA|SELECT/.test(a.tagName))document.body.classList.remove("typing")},80));
 /* [80] widget Prochaine réunion : bouton pour brancher l'agenda */
 {const _vt13=V.today;V.today=()=>_vt13().replace('Agenda non branché.</div>','Agenda non branché.</div><button class="tool" data-act="calon" style="margin-top:10px">Afficher mes réunions</button>')}
+
+
+/* ================= v14 : écrire simplement, sans syntaxe ================= */
+const KV14=1;
+/* --- projets récents (pour les pastilles) --- */
+function recentSpaces(n){const last={};items().forEach(i=>{if(i.space){const t=+new Date(i.updatedAt||i.createdAt||0);if(!last[i.space]||t>last[i.space])last[i.space]=t}});return spaces().filter(s=>s.kind!=="archive").sort((a,b)=>(last[b.id]||+new Date(b.createdAt||0))-(last[a.id]||+new Date(a.createdAt||0))).slice(0,n||8)}
+/* --- [I1-I12] la page d'écriture --- */
+U.cmp=null;
+function openComposer(o={}){
+ U.cmp={id:o.id||null,space:o.space!==undefined?o.space:(U.view==="space"?U.space:null),task:!!o.task,due:o.due||null,t:null};
+ const it=U.cmp.id?ST.items.get(U.cmp.id):null;if(it){U.cmp.space=it.space;U.cmp.task=it.type==="task";U.cmp.due=it.due}
+ const d=$("#drawer");d.classList.remove("qs");d.classList.add("compose");
+ d.innerHTML=`<div class="cmp-top"><button class="cmp-x" data-act="cmpclose" aria-label="Fermer">${I.x}</button><span class="cmp-st" id="cmpst">${it?"Enregistré":"Nouvelle note"}</span><button class="btn pri cmp-done" data-act="cmpclose">Terminé</button></div>
+ <div class="db cmp-db"><div class="cmp-sp" id="cmpsp"></div>
+ <input id="cmpt" class="cmp-t" placeholder="Titre" autocomplete="off" value="${esc(it?it.title:"")}">
+ <textarea id="cmpb" class="cmp-b" placeholder="Écris ici, comme dans ton cahier…">${esc(it?it.body||"":(o.text||""))}</textarea>
+ <div class="cmp-tools"><button class="tool" data-cmp="check">${ICN.check} Case à cocher</button><button class="tool" data-cmp="list">• Liste</button><button class="tool ${U.cmp.task?"on":""}" data-cmp="task">${ICN.target} C'est une tâche</button><label class="tool cmp-date">${ICN.cal}<span id="cmpdl">${U.cmp.due?fmtDue(U.cmp.due):"Date"}</span><input type="date" id="cmpdate" value="${U.cmp.due?ymd(new Date(U.cmp.due)):""}"></label>${CAP.dict?`<button class="tool" data-cmp="mic">🎙 Dicter</button>`:""}</div></div>`;
+ cmpChips();d.classList.add("on");$("#scrim").classList.add("on");
+ setTimeout(()=>{const f=it?$("#cmpb"):$("#cmpt");f&&f.focus();cmpGrow()},120)}
+function cmpChips(){const el=$("#cmpsp");if(!el)return;const c=U.cmp;const R=recentSpaces(7);if(c.space&&!R.some(s=>s.id===c.space)&&sp(c.space))R.unshift(sp(c.space));
+ el.innerHTML=`<button class="tool ${!c.space?"on":""}" data-cmpsp="">Sans projet</button>${R.map(s=>`<button class="tool ${c.space===s.id?"on":""}" data-cmpsp="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</button>`).join("")}<button class="tool" data-cmpsp="__new">+ Nouveau</button>`}
+function cmpGrow(){const b=$("#cmpb");if(!b)return;b.style.height="auto";b.style.height=Math.max(b.scrollHeight,innerWidth<=820?260:340)+"px"}
+function cmpSave(final){const c=U.cmp;if(!c)return;const t=($("#cmpt")||{}).value||"";const b=($("#cmpb")||{}).value||"";
+ if(!t.trim()&&!b.trim()){if(c.id&&final&&ST.items.get(c.id)&&!ST.items.get(c.id).title){hardDelete("items",c.id);c.id=null}return}
+ const title=t.trim()||b.trim().split("\n")[0].replace(/^[-*•]\s+(\[[ xX]\]\s*)?/,"").slice(0,120);
+ const base=c.id&&ST.items.get(c.id)?ST.items.get(c.id):newItem({src:"ecrire"});
+ const upd={...base,title,body:b,type:c.task||c.due?"task":(base.type==="task"&&!c.task?"note":base.type||"note"),status:base.status==="done"?"done":"todo",space:c.space||null,due:c.due||null};
+ if(upd.type!=="task"&&base.type==="task")upd.type="note";
+ if(c.task||c.due)upd.type="task";
+ putItem(upd);c.id=upd.id;const st=$("#cmpst");if(st)st.textContent="Enregistré ✓"}
+document.addEventListener("input",e=>{const t=e.target;if(!U.cmp||!t||(t.id!=="cmpt"&&t.id!=="cmpb"))return;if(t.id==="cmpb")cmpGrow();const st=$("#cmpst");if(st)st.textContent="…";clearTimeout(U.cmp.t);U.cmp.t=setTimeout(()=>cmpSave(false),500)});
+document.addEventListener("keydown",e=>{const t=e.target;if(!U.cmp)return;
+ if(t&&t.id==="cmpt"&&e.key==="Enter"){e.preventDefault();$("#cmpb").focus();return}
+ if(t&&t.id==="cmpb"&&e.key==="Enter"&&!e.shiftKey){const v=t.value,p=t.selectionStart;const ls=v.lastIndexOf("\n",p-1)+1;const line=v.slice(ls,p);const m=line.match(/^(\s*)(- \[[ xX]\] |- |• )/);if(m){e.preventDefault();if(line.trim()===m[2].trim()){t.value=v.slice(0,ls)+v.slice(p);t.selectionStart=t.selectionEnd=ls}else{const ins="\n"+m[1]+m[2].replace(/\[[xX]\]/,"[ ]");t.value=v.slice(0,p)+ins+v.slice(p);t.selectionStart=t.selectionEnd=p+ins.length}t.dispatchEvent(new Event("input",{bubbles:true}))}}
+ if((e.ctrlKey||e.metaKey)&&e.key==="Enter"){e.preventDefault();cmpClose()}},true);
+function cmpClose(){if(!U.cmp)return;clearTimeout(U.cmp.t);cmpSave(true);const c=U.cmp;const it=c.id&&ST.items.get(c.id);U.cmp=null;$("#drawer").classList.remove("compose");closeDrawer();
+ if(it)toast((it.type==="task"?"Tâche":"Note")+" enregistrée"+(it.space&&sp(it.space)?" dans "+sp(it.space).name:""),()=>{hardDelete("items",it.id)},"",5000)}
+{const _cd14=closeDrawer;closeDrawer=function(){if(U.cmp){clearTimeout(U.cmp.t);cmpSave(true);U.cmp=null}$("#drawer").classList.remove("compose");return _cd14()}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-cmp],[data-cmpsp],[data-act=cmpclose]");if(!t||!U.cmp)return;e.preventDefault();e.stopPropagation();const c=U.cmp;
+ if(t.dataset.act==="cmpclose")return cmpClose();
+ if(t.dataset.cmpsp!==undefined){let v=t.dataset.cmpsp;if(v==="__new"){const n=prompt("Nom du nouveau projet :");if(!n||!n.trim())return;const id=nid("s");putSpace({id,name:n.trim(),kind:"project",color:COLORS[spaces().length%COLORS.length],goal:"",createdAt:nowIso()});v=id}c.space=v||null;cmpChips();cmpSave(false);return}
+ const a=t.dataset.cmp,b=$("#cmpb");
+ if(a==="check"||a==="list"){const pre=a==="check"?"- [ ] ":"- ";const v=b.value,p=b.selectionStart;const ls=v.lastIndexOf("\n",p-1)+1;const ins=(p>ls?"\n":"")+pre;b.value=v.slice(0,p)+ins+v.slice(p);b.focus();b.selectionStart=b.selectionEnd=p+ins.length;b.dispatchEvent(new Event("input",{bubbles:true}));return}
+ if(a==="task"){c.task=!c.task;if(!c.task)c.due=null;t.classList.toggle("on",c.task);const dl=$("#cmpdl");if(dl&&!c.due)dl.textContent="Date";cmpSave(false);return}
+ if(a==="mic"){$("#cmpb").focus();const mb=document.getElementById("micbtn");mb&&mb.click()}},true);
+document.addEventListener("change",e=>{if(e.target&&e.target.id==="cmpdate"&&U.cmp){const v=e.target.value;U.cmp.due=v?iso(new Date(v+"T09:00:00")):null;if(v)U.cmp.task=true;const dl=$("#cmpdl");if(dl)dl.textContent=v?fmtDue(U.cmp.due):"Date";const tb=document.querySelector('[data-cmp=task]');tb&&tb.classList.toggle("on",U.cmp.task);cmpSave(false)}});
+/* le + , le bouton Écrire et la touche C ouvrent la page d'écriture */
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest('[data-act="cap"],[data-act="write"]');if(!t)return;e.preventDefault();e.stopImmediatePropagation();if($("#pal")&&$("#pal").classList.contains("on"))closePal();openComposer({space:t.dataset.space!==undefined?(t.dataset.space||null):undefined})},true);
+document.addEventListener("keydown",e=>{if(e.key!=="c"||e.ctrlKey||e.metaKey||e.altKey)return;const a=document.activeElement;if(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName))return;if($("#drawer").classList.contains("on"))return;e.preventDefault();e.stopImmediatePropagation();openComposer({})},true);
+/* --- [I13-I20] la vue Notes --- */
+U.nq="";U.nsp="";
+V.notes=()=>{const q=nn(U.nq);const all=[...ST.items.values()].filter(i=>!i.deletedAt&&i.type!=="task"&&i.type!=="event"&&(!U.nsp||i.space===U.nsp)&&(!q||nn(i.title+" "+(i.body||"")).includes(q))).sort((a,b)=>new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt));
+ const snip=b=>esc(String(b||"").replace(/^#+\s*/gm,"").replace(/^>\s*\S*\s*/gm,"").replace(/[-*]\s+\[[ xX]\]\s*/g,"☐ ").replace(/\|/g," ").replace(/\s+/g," ").trim().slice(0,160));
+ const card=i=>{const s=sp(i.space);return `<button class="ncard" data-open="${i.id}"><div class="ncard-t">${i.pinned?'<span class="npin">●</span>':""}${esc(i.title||"(sans titre)")}</div>${i.body?`<div class="ncard-s">${snip(i.body)}</div>`:""}<div class="ncard-m">${s?`<span class="dot" style="background:${s.color}"></span>${esc(s.name)} · `:""}${T_TYPE[i.type]&&i.type!=="note"?T_TYPE[i.type]+" · ":""}${fmtRel(i.updatedAt||i.createdAt)}</div></button>`};
+ return `<div class="hdr"><div><h1>Notes</h1><div class="sub">Toutes tes notes, les plus récentes en premier.</div></div><div class="act"><button class="btn pri" data-act="write">${ICN.edit} Écrire</button></div></div>
+ <div class="nsearch"><input class="fld" id="nq" placeholder="Chercher dans mes notes…" value="${esc(U.nq)}"></div>
+ <div class="pick nfil"><button class="tool ${!U.nsp?"on":""}" data-nsp="">Toutes</button>${recentSpaces(12).map(s=>`<button class="tool ${U.nsp===s.id?"on":""}" data-nsp="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</button>`).join("")}</div>
+ ${all.length?`<div class="ngrid">${all.slice(0,200).map(card).join("")}</div>`:`<div class="empty"><b>${q||U.nsp?"Rien trouvé.":"Pas encore de note."}</b>${q||U.nsp?"":"Touche « Écrire » pour commencer."}</div>`}`};
+function fmtRel(d){if(!d)return"";const m=Math.round((Date.now()-new Date(d))/60000);if(m<1)return"à l'instant";if(m<60)return"il y a "+m+" min";const h=Math.round(m/60);if(h<24)return"il y a "+h+" h";const j=Math.round(h/24);if(j===1)return"hier";if(j<7)return"il y a "+j+" jours";return fmtDate(d)}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="nq"){U.nq=e.target.value;const p=e.target.selectionStart;render();const n=$("#nq");if(n){n.focus();try{n.setSelectionRange(p,p)}catch(_){}}}});
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-nsp],[data-act=sidemore]");if(!t)return;if(t.dataset.act==="sidemore"){e.stopImmediatePropagation();U.sideMore=!U.sideMore;try{localStorage.setItem("k_sidemore",U.sideMore?"1":"")}catch(_){}return render()}U.nsp=t.dataset.nsp;render()},true);
+try{U.sideMore=!!localStorage.getItem("k_sidemore")}catch(e){}
+/* --- [I21-I30] Aujourd'hui : écrire d'abord, dernières notes ensuite --- */
+const WRITEBTN=(space)=>`<button class="writebtn" data-act="write" ${space!==undefined?`data-space="${space||""}"`:""}><span class="wb-ic">${ICN.edit}</span><span class="wb-t">Écrire…</span><span class="wb-s">une idée, une note, une tâche</span></button>`;
+function stripCap(h,space){return h.replace(/<div class="cap" id="capbox">[\s\S]*?<span class="hint">[\s\S]*?<\/span><\/div><\/div>/,WRITEBTN(space))}
+{const _vt14=V.today;V.today=()=>{let h=_vt14();if(ST.mode!=="db"&&ST.mode!=="local")return h;h=stripCap(h);
+ const rec=[...ST.items.values()].filter(i=>!i.deletedAt&&i.type!=="task"&&i.type!=="event"&&!(i.tags||[]).includes("journal")).sort((a,b)=>new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt)).slice(0,6);
+ const strip=rec.length?`<div class="grp">Reprendre</div><div class="nrow">${rec.map(i=>{const s=sp(i.space);return `<button class="ncard sm" data-open="${i.id}"><div class="ncard-t">${esc(i.title||"(sans titre)")}</div><div class="ncard-m">${s?`<span class="dot" style="background:${s.color}"></span>${esc(s.name)} · `:""}${fmtRel(i.updatedAt||i.createdAt)}</div></button>`}).join("")}</div>`:"";
+ h=h.replace(/<button class="writebtn"[\s\S]*?<\/button>/,m=>m+strip);
+ return h.replace(/<button class="qk" data-act="menu">[\s\S]*?<\/button>/,"")}}
+{const _vs14=V.space;V.space=()=>stripCap(_vs14(),U.space)}
+{const _vi14=V.inbox;V.inbox=()=>stripCap(_vi14(),null)}
+/* --- [I31-I36] Mode réunion : des boutons, plus rien à retenir --- */
+{const _vm14=V.meeting;V.meeting=()=>_vm14().replace(/<div class="mleg">[\s\S]*?<\/div>/,`<div class="pick mbtns"><button class="tool" data-mins="D: ">${ICN.check} Décision</button><button class="tool" data-mins="A: ">${ICN.target} Action pour moi</button><button class="tool" data-mins="A: ~">${ICN.hist} Action de quelqu'un</button><button class="tool" data-mins="? ">? Question</button></div>`).replace(/placeholder="Notes…[^"]*"/,'placeholder="Note librement. Les boutons ci-dessous marquent une décision, une action ou une question."')}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mins]");if(!t)return;const b=$("#mbody");if(!b)return;let pre=t.dataset.mins;if(pre==="A: ~"){const n=prompt("Qui doit le faire ?");if(!n)return;pre="A: ~"+n.trim().split(/\s+/)[0]+" "}const v=b.value,p=b.selectionStart??v.length;const ls=v.lastIndexOf("\n",p-1)+1;const ins=(p>ls?"\n":"")+pre;b.value=v.slice(0,p)+ins+v.slice(p);b.focus();b.selectionStart=b.selectionEnd=p+ins.length;b.dispatchEvent(new Event("input",{bubbles:true}))});
+/* --- [I37-I42] note ouverte : l'essentiel d'abord, les options repliées --- */
+{const _oi14=openItem;openItem=function(id){_oi14(id);const db=$("#drawer .db");if(!db||db.querySelector(".edmore"))return;const lbls=[...db.querySelectorAll(":scope > .lbl2")];const start=lbls.find(l=>/C'est quoi/i.test(l.textContent));if(!start)return;
+ const det=document.createElement("details");det.className="edmore";det.innerHTML=`<summary>Plus d'options <span>type, statut, date, personnes, étiquettes</span></summary>`;let n=start;const move=[];while(n&&!(n.classList&&n.classList.contains("edfoot"))){move.push(n);n=n.nextElementSibling}
+ if(!move.length)return;start.parentNode.insertBefore(det,start);move.forEach(x=>det.appendChild(x))}}
 
 document.body.classList.add("sa");
 boot();
