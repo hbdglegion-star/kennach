@@ -1424,6 +1424,15 @@ html body.sa .kw-pin,html body.sa .kw-prio{background:var(--ink);color:var(--bg)
 html body.sa .kw-late{color:var(--red,#B3261E);border-color:currentColor}
 html body.sa .kw-today{color:var(--ink);border-color:var(--ink)}
 html body.sa .body .kkind{margin:0 0 3px}
+html body.sa #drawer .cmp-more[open] .cmp-menu{position:absolute!important;z-index:70}
+/* v22 : option active du menu lisible dans les 2 thèmes */
+html body.sa .k21-g>.tool.on{color:var(--ink)!important;background:var(--accent-soft)!important}
+html body.sa .k21-g>.tool.on::after{content:"✓";margin-left:auto;font-weight:700}
+/* v22 : choix « Encre » dans les couleurs */
+html body.sa .sw-ink{background:#161616!important;box-shadow:inset 0 0 0 2px var(--bg)}
+html.kdark body.sa .sw-ink{background:#F3F1EC!important}
+/* v22 : bandeau hors connexion sous la barre du haut, jamais par-dessus */
+@media (max-width:820px){html body.sa #koff{top:auto!important;bottom:calc(98px + env(safe-area-inset-bottom,0px))!important}}
 </style>
 </head>
 <body>
@@ -3498,7 +3507,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="22";
+const KVER="23";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -4138,6 +4147,12 @@ document.addEventListener("click",e=>{if(!U.cmp)return;setTimeout(()=>{const dl=
 /* [B] un menu ⋯ ouvert se ferme quand on touche ailleurs (il recouvrait la barre) ; toucher une option le ferme aussi */
 document.addEventListener("pointerdown",e=>{document.querySelectorAll("details.cmp-more[open]").forEach(d=>{if(!d.contains(e.target))d.open=false})},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("details.cmp-more[open] .cmp-menu button");if(b){const d=b.closest("details");setTimeout(()=>{if(d&&!b.matches("[data-tpl]"))d.open=false},0)}});
+/* [B] menu ⋯ : toujours entièrement dans le panneau de la note (sur PC il dépassait à gauche et devenait incliquable) */
+function k21Place(d){const m=d.querySelector(".cmp-menu"),sm=d.querySelector("summary"),dr=$("#drawer");if(!m||!sm||!dr)return;
+ m.style.left="";m.style.right="";m.style.top="";m.style.bottom="";const R=dr.getBoundingClientRect(),S=sm.getBoundingClientRect(),D=d.getBoundingClientRect(),w=m.offsetWidth,h=m.offsetHeight;
+ let x=S.right-w;x=Math.max(R.left+8,Math.min(x,R.right-w-8));let y=S.top-h-6;if(y<R.top+8)y=Math.min(S.bottom+6,R.bottom-h-8);
+ m.style.setProperty("left",(x-D.left)+"px","important");m.style.setProperty("right","auto","important");m.style.setProperty("top",(y-D.top)+"px","important");m.style.setProperty("bottom","auto","important")}
+document.addEventListener("toggle",e=>{const d=e.target;if(d&&d.matches&&d.matches("details.cmp-more")&&d.open)requestAnimationFrame(()=>k21Place(d))},true);
 
 /* ================= v22 : chaque carte dit ce qu'elle est et pourquoi elle compte ================= */
 function kKind(it){if(!it)return null;const t=it.type;
@@ -4165,6 +4180,15 @@ function kRecent(){if(U.view!=="today")return;const v=$("#view");if(!v)return;co
  strip.querySelectorAll("[data-open]").forEach(c=>{const k=kKind(ST.items.get(c.dataset.open));if(!k||!["note","meet"].includes(k.k))c.remove()});
  if(!strip.querySelector("[data-open]")){g.remove();strip.remove()}}
 {const _r22b=render;render=function(){_r22b.apply(this,arguments);try{kRecent();kLabelAll()}catch(e){}}}
+/* [B] Réglages › Couleur : choix « Encre » (retour à l'origine) en premier, plus d'or ni d'or rose */
+{const drop=new Set(["#C9A96E","#C99A8E"]);for(let i=ACCENTS.length-1;i>=0;i--)if(drop.has(ACCENTS[i][0]))ACCENTS.splice(i,1)}
+{const _vs22=V.settings;V.settings=()=>_vs22().replace(/(<div class="lbl2">Couleur<\/div><div class="pick">)/,`$1<button class="sw sw-ink ${ST.settings.accent?"":"on"}" data-accink="1" title="Encre (d'origine)" aria-label="Encre (d'origine)"></button>`)}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-accink]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();putSettings({accent:null});applyLook();render();toast("Couleur d'origine : encre")},true);
+/* [B] hors connexion : un seul message (le bandeau discret), le petit message en double est retiré */
+{const _t22=toast;toast=function(msg){if(/^Hors connexion/.test(String(msg||""))&&document.getElementById("koff"))return;return _t22.apply(this,arguments)}}
+window.addEventListener("offline",()=>{setTimeout(()=>{const t=$("#toast");if(t&&/^Hors connexion/.test(t.textContent))t.classList.remove("on")},0)});
+/* [B] modèles sans syntaxe : « Décisions : » au lieu de « ## Décisions » */
+for(const k in KTPL){if(KTPL[k]&&KTPL[k][1])KTPL[k][1]=KTPL[k][1].replace(/^##\s*(.+)$/gm,"$1 :")}
 
 document.body.classList.add("sa");
 boot();
