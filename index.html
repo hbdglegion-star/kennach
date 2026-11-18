@@ -1221,6 +1221,33 @@ html body.sa .krem-r b{color:var(--gold);font-variant-numeric:tabular-nums;min-w
 html body.sa .krem-r span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 html body.sa .cmp-rem{flex-wrap:wrap}
 html body.sa .cmp-rem input.fld{width:auto;min-width:0;flex:1 1 190px;font-size:16px;min-height:40px;padding:6px 10px}
+
+/* ================= v18 ================= */
+html body.sa #drawer.compose #cmpsp{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;margin:10px 0 4px;padding-bottom:2px;scrollbar-width:none}
+html body.sa #drawer.compose #cmpsp::-webkit-scrollbar{display:none}
+html body.sa #drawer.compose #cmpsp .tool{flex:none}
+html body.sa #drawer.compose .cmp-tools{position:sticky;bottom:0;z-index:2;background:var(--surface);padding-top:8px;padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))}
+html body.sa .cmp-mtpl{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;padding-top:8px;border-top:1px solid var(--border)}
+html body.sa .cmp-mlbl{width:100%;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}
+html body.sa #cmpwhen{margin:8px 0 2px;border-color:var(--line,var(--border-2));color:var(--gold);font-weight:600;animation:kwin .22s ease-out}
+html body.sa #cmpwhen[hidden]{display:none}
+@keyframes kwin{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){html body.sa #cmpwhen{animation:none}}
+html body.sa .know{border:1px solid var(--line,var(--border-2));border-radius:20px;padding:14px 14px 6px;margin:14px 0 18px;background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 7%,var(--surface)),var(--surface) 60%);box-shadow:var(--e1)}
+html body.sa .know-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 6px}
+html body.sa .know-h span{font-family:var(--f-d,"Cormorant Garamond",serif);font-size:24px;font-weight:600;color:var(--ink)}
+html body.sa .know-h b{font:600 13px/1 var(--f);color:var(--on-gold);background:var(--gold-grad);border-radius:999px;padding:5px 10px;font-variant-numeric:tabular-nums}
+html body.sa .know .grp{margin:10px 2px 4px}
+html body.sa .know .list{border:0;background:transparent;box-shadow:none;margin:0}
+html body.sa .know .krem-l{display:grid;margin-bottom:6px}
+html body.sa #drawer.more18 .db>div[style*="grid"]{gap:0!important;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--surface)}
+html body.sa #drawer.more18 .db>div[style*="grid"]>.sp{border:0!important;border-radius:0!important;border-top:1px solid var(--border)!important;box-shadow:none!important;padding:11px 14px!important;background:transparent!important}
+html body.sa #drawer.more18 .db>div[style*="grid"]>.sp:first-child{border-top:0!important}
+html body.sa #drawer.more18 .db .sp b{font-family:var(--f)!important;font-weight:600}
+html body.sa #drawer.more18 .db .sp p{font-size:12.5px;color:var(--text-2)}
+html body.sa #view .pick.nfil{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-right:-16px;padding-right:16px;mask-image:linear-gradient(90deg,#000 88%,transparent)}
+html body.sa #view .pick.nfil::-webkit-scrollbar{display:none}
+html body.sa #view .pick.nfil>*{flex:none}
 </style>
 </head>
 <body>
@@ -3295,7 +3322,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="17";
+const KVER="18";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3634,6 +3661,95 @@ function kRemBox(){if(U.view!=="today")return;const v=$("#view");if(!v||v.queryS
  const html=`<div class="krem"><div class="lbl2" style="margin-top:0">🔔 Rappels du jour</div>${L.map(i=>`<button class="krem-r" data-open="${i.id}"><b>${hm(new Date(i.remindAt))}</b><span>${esc(i.title||"Note")}</span></button>`).join("")}</div>`;
  const hd=v.querySelector(".hdr");if(hd)hd.insertAdjacentHTML("afterend",html);else v.insertAdjacentHTML("afterbegin",html)}
 {const _r17b=render;render=function(){_r17b.apply(this,arguments);try{kRemBox()}catch(_){}}}
+
+/* ================= v18 : capture en 3 s + appli calme ================= */
+const kCoarse=()=>matchMedia("(pointer:coarse)").matches;
+/* [I] Écrire : texte d'abord, clavier direct, projets dessous, modèles dans ⋯ */
+function cmp18Layout(isNew){const d=$("#drawer");const b=$("#cmpb"),sp=$("#cmpsp");if(!d||!b)return;
+ const anchor=$("#cmppv")||b;if(sp&&anchor.parentNode)anchor.after(sp);
+ const tpl=$("#cmptpl"),menu=d.querySelector(".cmp-menu");
+ if(tpl&&menu){const btns=[...tpl.querySelectorAll("[data-tpl]")];if(btns.length){const g=document.createElement("div");g.className="cmp-mtpl";g.innerHTML=`<div class="cmp-mlbl">Modèles</div>`;btns.forEach(x=>g.appendChild(x));menu.appendChild(g)}tpl.remove()}
+ if(isNew){try{b.focus({preventScroll:true})}catch(_){b.focus()}setTimeout(()=>{if(U.cmp&&document.activeElement!==b&&$("#cmpb")===b)try{b.focus({preventScroll:true})}catch(_){}},150)}
+ else if(kCoarse()){b.readOnly=true;setTimeout(()=>{if(document.activeElement===b)b.blur();b.readOnly=false},220)}}
+{const _oc18=openComposer;openComposer=function(o={}){_oc18(o);if(!U.cmp)return;cmp18Layout(!o.id)}}
+/* sans titre : à la fin, la 1re ligne devient le titre et sort du texte (sauf liste ou case à cocher) */
+{const _cs18=cmpSave;cmpSave=function(f){if(f&&U.cmp){const t=$("#cmpt"),b=$("#cmpb");if(t&&b&&!t.value.trim()){const L=b.value.replace(/^\s+/,"").split("\n");const first=(L[0]||"").trim();
+ if(first&&L.length>1&&!/^([-*•]|\d+[.)])\s/.test(first)&&first.length<=140){t.value=first;b.value=L.slice(1).join("\n").replace(/^\n+/,"")}}}return _cs18.apply(this,arguments)}}
+
+/* [I] Détection douce : « demain », « lundi », « à 14h », « le 25 »… → une pastille, un tap. Le texte n'est jamais modifié. */
+const K_JOURS=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"];
+function kWhen(text,now){now=now?new Date(now):new Date();const s=" "+norm(text).replace(/[’`]/g,"'").replace(/\s+/g," ")+" ";
+ let dd=null,dayOfMonth=null,wd=null,h=null,mi=0,soft=null,abs=null;
+ const MO=["janv","fev","mars","avr","mai","juin","juil","aout","sept","oct","nov","dec"];
+ /* date écrite : « 3 janvier », « 1er décembre », « 15/12 » */
+ const md=s.match(/[^a-z\d](1er|\d{1,2}) (janv(?:ier)?|fevr?(?:ier)?|mars|avr(?:il)?|mai|juin|juil(?:let)?|aout|sept(?:embre)?|oct(?:obre)?|nov(?:embre)?|dec(?:embre)?)\.?(?=[^a-z])/);
+ if(md){const day=md[1]==="1er"?1:+md[1];const mo=MO.findIndex(x=>md[2].startsWith(x));if(day>=1&&day<=31&&mo>=0)abs={day,mo}}
+ if(!abs){const sl=s.match(/[^\d\/](\d{1,2})\/(\d{1,2})(?![\d\/])/);if(sl){const day=+sl[1],mo=+sl[2]-1;if(day>=1&&day<=31&&mo>=0&&mo<=11)abs={day,mo}}}
+ if(/[^a-z]apres[- ]demain[^a-z]/.test(s))dd=2;else if(/[^a-z]demain[^a-z]/.test(s))dd=1;else if(/[^a-z]aujourd'?hui[^a-z]/.test(s))dd=0;
+ const dn=s.match(/[^a-z]dans (\d{1,2}) ?(jours?|j|semaines?|sem)(?=[^a-z])/);if(dn&&dd===null)dd=/^s/.test(dn[2])?7*+dn[1]:+dn[1];
+ /* moments de la journée (si aucune heure écrite) */
+ if(/[^a-z]ce soir[^a-z]/.test(s))soft=18;else if(/[^a-z]fin de (?:journee|la journee)[^a-z]/.test(s))soft=17;else if(/[^a-z](?:cet |cette )?(?:aprem|apres[- ]midi)[^a-z]/.test(s))soft=14;else if(/[^a-z](?:a )?midi[^a-z]/.test(s))soft=12;
+ if(soft!==null&&dd===null&&!/[^a-z](lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)[^a-z]/.test(s)&&!abs)dd=0;
+ const w=s.match(/[^a-z](lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)[^a-z]/);if(w&&dd===null)wd=K_JOURS.indexOf(w[1]);
+ if(wd===null&&dd===null&&/[^a-z]semaine prochaine[^a-z]/.test(s))wd=1;
+ const lm=s.match(/[^a-z\d]le (\d{1,2})(?![a-z\d:])(?! ?(?:h|heures?|min|%|euros?|eur|dh|mad|pc|postes?)[^a-z])/);if(lm&&dd===null&&wd===null&&!abs){const n=+lm[1];if(n>=1&&n<=31)dayOfMonth=n}
+ /* une durée (« de 2h », « pendant 3h », « dans 2h », « en 1h30 ») n'est pas une heure de rendez-vous */
+ const isDur=(m)=>!/^.?a /.test(m[0])&&/(?:^|[^a-z])(?:de|pendant|dans|en|durant|depuis|d'environ|environ) ?$/.test(s.slice(0,m.index+1));
+ const firstT=re=>{for(const m of s.matchAll(re)){if(!isDur(m))return m}return null};
+ const tm=firstT(/(?:^|[^\d+a-z])(?:a )?([01]?\d|2[0-3]) ?h ?([0-5]\d)?(?![a-z\d])(?! ?(?:de|d'|du|des)[^a-z])/g)||firstT(/(?:^|[^\d+a-z\/])(?:a )?([01]?\d|2[0-3]):([0-5]\d)(?!\d)/g);
+ if(tm){h=+tm[1];mi=tm[2]?+tm[2]:0}else if(soft!==null){h=soft;mi=0}
+ if(dd===null&&wd===null&&dayOfMonth===null&&h===null&&!abs)return null;
+ const hasTime=h!==null;const d=new Date(now);d.setSeconds(0,0);
+ const setT=x=>{if(hasTime)x.setHours(h,mi,0,0);else x.setHours(9,0,0,0)};
+ if(abs){d.setDate(1);d.setMonth(abs.mo);const last=new Date(d.getFullYear(),abs.mo+1,0).getDate();d.setDate(Math.min(abs.day,last));setT(d);const t0=new Date(now);t0.setHours(0,0,0,0);if(new Date(d).setHours(0,0,0,0)<+t0)d.setFullYear(d.getFullYear()+1)}
+ else if(dd!==null){d.setDate(d.getDate()+dd);setT(d)}
+ else if(wd!==null){let delta=(wd-now.getDay()+7)%7;d.setDate(d.getDate()+delta);setT(d);if(delta===0&&(!hasTime||d<=now))d.setDate(d.getDate()+7)}
+ else if(dayOfMonth!==null){d.setDate(1);if(dayOfMonth<now.getDate())d.setMonth(d.getMonth()+1);const last=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();d.setDate(Math.min(dayOfMonth,last));setT(d)}
+ else{setT(d);if(d<=now)d.setDate(d.getDate()+1)}
+ const t0=new Date(now);t0.setHours(0,0,0,0);const delta=Math.round((new Date(d).setHours(0,0,0,0)-t0)/864e5);
+ const dayL=delta===0?"Aujourd'hui":delta===1?"Demain":delta<7?K_JOURS[d.getDay()].replace(/^./,c=>c.toUpperCase()):(d.getDate()===1?"1er":d.getDate())+" "+["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."][d.getMonth()];
+ return {due:d,hasTime,label:dayL+(hasTime?" "+hm(d):"")}}
+function kWhenPaint(){const c=U.cmp,b=$("#cmpb");if(!c||!b)return;let x=$("#cmpwhen");
+ const r=kWhen((($("#cmpt")||{}).value||"")+"\n"+b.value);
+ if(!x){x=document.createElement("button");x.type="button";x.id="cmpwhen";x.className="tool cmp-when";x.hidden=true;const sp=$("#cmpsp");if(sp)sp.before(x);else ($("#cmppv")||b).after(x)}
+ const same=r&&c.due&&Math.abs(new Date(c.due)-r.due)<6e4;
+ if(!r||same||c.whenOff===(r&&r.label)){x.hidden=true;x._r=null;return}
+ x._r=r;x.textContent="📅 "+r.label+(r.hasTime?" · avec rappel":"");x.hidden=false}
+document.addEventListener("input",e=>{if(!U.cmp||!e.target||(e.target.id!=="cmpb"&&e.target.id!=="cmpt"))return;clearTimeout(U.kWT);U.kWT=setTimeout(kWhenPaint,250)});
+document.addEventListener("click",async e=>{const x=e.target.closest&&e.target.closest("#cmpwhen");if(!x||!U.cmp||!x._r)return;e.preventDefault();e.stopImmediatePropagation();const r=x._r,c=U.cmp;
+ c.due=r.due.toISOString();const dl=$("#cmpdl");if(dl)dl.textContent=r.label;const di=$("#cmpdate");if(di)di.value=ymd(r.due);cmpSave(false);
+ const it=c.id&&ST.items.get(c.id);if(it&&r.hasTime&&r.due>Date.now()){putItem({...it,remindAt:c.due,reminded:false});try{if("Notification" in window&&Notification.permission==="default")await Notification.requestPermission()}catch(_){}}
+ c.whenOff=r.label;x.hidden=true;x._r=null;toast("📅 "+r.label+(r.hasTime&&r.due>Date.now()?" · rappel posé":""))},true);
+
+/* [I] Aujourd'hui calme : un bloc « Maintenant » sous Écrire (en retard, aujourd'hui, rappels), un seul « Reprendre » */
+kRemBox=function(){};
+function kNowBox(){if(U.view!=="today")return;const v=$("#view");if(!v||v.querySelector(".know"))return;
+ const grps=[...v.children].filter(e=>e.classList.contains("grp"));
+ const take=g=>{if(!g)return null;const n=g.nextElementSibling;return [g,n&&n.classList.contains("list")?n:null]};
+ const late=take(grps.find(g=>g.classList.contains("late")));
+ const tod=take(grps.find(g=>/^aujourd'hui/i.test(g.textContent.trim())));
+ const rep=take(grps.find(g=>/Reprendre o/.test(g.textContent)));if(rep)rep.forEach(e=>e&&e.remove());
+ const seen=new Set([late,tod].flatMap(x=>x&&x[1]?[...x[1].querySelectorAll("[data-open]")].map(e=>e.dataset.open):[]));
+ const t1=+today0()+864e5;const R=[...ST.items.values()].filter(i=>i.remindAt&&!i.reminded&&!i.deletedAt&&+new Date(i.remindAt)<t1&&!seen.has(i.id)).sort((a,b)=>new Date(a.remindAt)-new Date(b.remindAt));
+ const nL=late&&late[1]?late[1].querySelectorAll(":scope > *").length:0,nT=tod&&tod[1]?tod[1].querySelectorAll(":scope > *").length:0;
+ if(!nL&&!nT&&!R.length){[late,tod].forEach(x=>x&&x.forEach(e=>e&&e.remove()));return}
+ const box=document.createElement("section");box.className="know";box.innerHTML=`<div class="know-h"><span>Maintenant</span><b>${nL+nT+R.length}</b></div>`;
+ [late,tod].forEach(x=>{if(x&&x[1]&&x[1].children.length){box.appendChild(x[0]);box.appendChild(x[1])}else if(x)x.forEach(e=>e&&e.remove())});
+ if(R.length)box.insertAdjacentHTML("beforeend",`<div class="grp">Rappels</div><div class="krem-l">${R.map(i=>`<button class="krem-r" data-open="${i.id}"><b>${hm(new Date(i.remindAt))}</b><span>${esc(i.title||"Note")}</span></button>`).join("")}</div>`);
+ const w=v.querySelector(".writebtn");if(w)w.after(box);else v.prepend(box)}
+{const _r18=render;render=function(){_r18.apply(this,arguments);try{kNowBox()}catch(_){}}}
+
+/* [I] Notes allégées : le + de la barre du bas suffit ; il range dans le projet filtré (idée 118 conservée) */
+{const _ocN=openComposer;openComposer=function(o={}){if(!o.id&&o.space===undefined&&U.view==="notes"&&U.nsp)o={...o,space:U.nsp};return _ocN(o)}}
+{const _vn18=V.notes;V.notes=()=>_vn18().replace(/<button[^>]*data-act="write"[^>]*>[\s\S]*?<\/button>/,"").replace(/(<div class="hdr"><div><h1>[^<]*<\/h1>)<div class="sub">[^<]*<\/div>/,"$1")}
+/* [I] Plus : Tâches est déjà en bas ; un seul bouton actif */
+{const i=MORE_V.indexOf("tasks");if(i>=0)MORE_V.splice(i,1)}
+{const _ms18=moreSheet;moreSheet=function(){const r=_ms18.apply(this,arguments);const t=document.querySelector('#drawer [data-nav="tasks"]');if(t)t.remove();$("#drawer").classList.add("more18");return r}}
+{const _cd18=closeDrawer;closeDrawer=function(){$("#drawer").classList.remove("more18");return _cd18.apply(this,arguments)}}
+/* [I] Projets : « + Projet », pas de barre vide, pas de groupe vide */
+{const _vc18=V.carnet;V.carnet=()=>_vc18().replace(/<button class="btn" data-act="newspace">\+ Espace<\/button>/,`<button class="btn pri" data-act="newproj18">+ Projet</button>`).replace(/<div class="pbar"[^>]*><i style="width:0%"><\/i><\/div>/g,"")}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=newproj18]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();spaceSheet(null,"project")},true);
+{const _r18c=render;render=function(){_r18c.apply(this,arguments);if(U.view!=="carnet")return;const v=$("#view");if(!v)return;[...v.children].forEach(g=>{if(!g.classList.contains("grp"))return;const n=g.nextElementSibling;if(n&&n.classList.contains("grid")&&n.children.length===1&&n.firstElementChild.classList.contains("empty")&&!/^Projets/.test(g.textContent.trim())){g.remove();n.remove()}})}}
 
 document.body.classList.add("sa");
 boot();
