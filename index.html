@@ -1248,6 +1248,64 @@ html body.sa #drawer.more18 .db .sp p{font-size:12.5px;color:var(--text-2)}
 html body.sa #view .pick.nfil{flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;margin-right:-16px;padding-right:16px;mask-image:linear-gradient(90deg,#000 88%,transparent)}
 html body.sa #view .pick.nfil::-webkit-scrollbar{display:none}
 html body.sa #view .pick.nfil>*{flex:none}
+
+/* ================= v19 : dossiers d'achat ================= */
+html body.sa .ach-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+html body.sa .ach-meta label{display:grid;gap:4px;min-width:0}
+html body.sa .ach-meta label.w{grid-column:1/-1}
+html body.sa .ach-meta span,html body.sa .ach-bc>span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2)}
+html body.sa .ach-meta input{font:500 16px/1.3 var(--f);color:var(--ink);background:transparent;border:1px solid var(--border-2);border-radius:12px;padding:10px 12px;min-width:0;width:100%}
+html body.sa .ach-meta input:focus{outline:none;border-color:var(--gold)}
+html body.sa .ach-bc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+html body.sa .ach-steps{display:grid;margin:0 0 14px;border:1px solid var(--border);border-radius:16px;overflow:hidden}
+html body.sa .ach-st{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;border-top:1px solid var(--border)}
+html body.sa .ach-st:first-child{border-top:0}
+html body.sa .ach-st.cur{background:color-mix(in srgb,var(--gold) 8%,transparent)}
+html body.sa .ach-ck{flex:none;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--border-2);background:transparent;display:grid;place-items:center;color:var(--on-gold);cursor:pointer;position:relative;padding:0}
+html body.sa .ach-ck::after{content:"";position:absolute;inset:-8px}
+html body.sa .ach-st.done .ach-ck{background:var(--gold-grad);border-color:transparent}
+html body.sa .ach-st.cur .ach-ck{border-color:var(--gold)}
+html body.sa .ach-ck svg{width:14px;height:14px}
+html body.sa .ach-sl{min-width:0;flex:1;display:grid;gap:2px}
+html body.sa .ach-sl b{font:600 15px/1.3 var(--f);color:var(--ink)}
+html body.sa .ach-st.done .ach-sl b{color:var(--text-2)}
+html body.sa .ach-sl small{font-size:12.5px;color:var(--text-2)}
+html body.sa .ach-st.cur .ach-sl small{color:var(--gold);font-weight:600}
+html body.sa .ach-sig{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+html body.sa .ach-list{display:grid;gap:8px;margin-bottom:10px}
+html body.sa .ach-row{display:grid;gap:6px;width:100%;text-align:left;border:1px solid var(--border);border-radius:16px;background:var(--surface);padding:12px 14px;cursor:pointer;color:var(--ink);font:inherit}
+html body.sa .ach-row:active{transform:scale(.99)}
+html body.sa .ach-rt{display:flex;justify-content:space-between;gap:10px;align-items:baseline;min-width:0}
+html body.sa .ach-rt b{font:600 15.5px/1.3 var(--f);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body.sa .ach-rt span{flex:none;font-size:13px;color:var(--text-2);font-variant-numeric:tabular-nums}
+html body.sa .ach-rm{font-size:13px;color:var(--gold);font-weight:600}
+html body.sa .ach-row.old .ach-rm{color:var(--danger,#E0675A)}
+html body.sa .ach-dots{display:flex;gap:5px}
+html body.sa .ach-dots i{flex:1;height:4px;border-radius:2px;background:var(--border)}
+html body.sa .ach-dots i.d{background:var(--gold-grad)}
+html body.sa .ach-dots i.c{background:color-mix(in srgb,var(--gold) 40%,var(--border))}
+html body.sa .achq{border:1px solid var(--line,var(--border-2));border-radius:18px;padding:12px;margin-bottom:12px;background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 6%,var(--surface)),var(--surface) 70%)}
+html body.sa .achq-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 8px}
+html body.sa .achq-h b{font-family:var(--f-d,"Cormorant Garamond",serif);font-size:22px;font-weight:600;color:var(--ink)}
+html body.sa .achq-h .n{font:600 13px/1 var(--f);color:var(--on-gold);background:var(--gold-grad);border-radius:999px;padding:5px 10px}
+html body.sa .achq .ach-row{background:transparent}
+html body.sa details.ach-fin>summary{cursor:pointer;list-style:none}
+html body.sa details.ach-fin>summary::-webkit-details-marker{display:none}
+html body.sa .know-sign{display:grid;gap:2px;width:100%;text-align:left;border:0;border-radius:14px;background:color-mix(in srgb,var(--gold) 10%,transparent);padding:10px 12px;margin:4px 0 8px;cursor:pointer;color:var(--ink);font:inherit}
+html body.sa .know-sign b{font:600 14px/1.2 var(--f);color:var(--gold)}
+html body.sa .know-sign span{font-size:14px}
+html body.sa .ach-mail{border:1px solid var(--line,var(--border-2));border-radius:16px;padding:12px 14px;margin:0 0 14px;display:grid;gap:10px}
+html body.sa .ach-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+html body.sa .ach-chips>span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-2);min-width:52px}
+html body.sa .ach-send{justify-content:center;width:100%}
+html body.sa .ach-hint{margin:0;font-size:12.5px}
+html body.sa .ach-next{display:grid;gap:6px;margin:12px 0 4px}
+html body.sa .ach-next>span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+html body.sa .ach-next .btn{width:100%;justify-content:center;min-height:50px;font-size:16px}
+html body.sa .ach-next.done{font:600 15px/1.3 var(--f);color:var(--gold);padding:10px 0}
+html body.sa .ach-rt{flex-direction:column;align-items:flex-start;gap:2px}
+html body.sa .ach-rt b{max-width:100%;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+html body.sa .ach-rt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 </style>
 </head>
 <body>
@@ -3322,7 +3380,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="18";
+const KVER="19";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3750,6 +3808,144 @@ function kNowBox(){if(U.view!=="today")return;const v=$("#view");if(!v||v.queryS
 {const _vc18=V.carnet;V.carnet=()=>_vc18().replace(/<button class="btn" data-act="newspace">\+ Espace<\/button>/,`<button class="btn pri" data-act="newproj18">+ Projet</button>`).replace(/<div class="pbar"[^>]*><i style="width:0%"><\/i><\/div>/g,"")}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=newproj18]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();spaceSheet(null,"project")},true);
 {const _r18c=render;render=function(){_r18c.apply(this,arguments);if(U.view!=="carnet")return;const v=$("#view");if(!v)return;[...v.children].forEach(g=>{if(!g.classList.contains("grp"))return;const n=g.nextElementSibling;if(n&&n.classList.contains("grid")&&n.children.length===1&&n.firstElementChild.classList.contains("empty")&&!/^Projets/.test(g.textContent.trim())){g.remove();n.remove()}})}}
+
+/* ================= v19 : dossiers d'achat ================= */
+/* Aucun nom, mail ni configuration d'entreprise ici (dépôt public) : tout vit dans ST.settings.achats (Firebase de l'utilisateur). */
+const ACH_STEPS=["Devis validé","BC fait","BC signé","Facture reçue","Suivi budgétaire","Parapheur signé","Remis à la Finance"];
+const ACH_SIGN=[3,6];
+function achNew(o={}){const it=newItem({type:"achat",status:"todo",title:o.title||"",body:o.body||"",space:o.space||null,src:"achat"});
+ it.achat={montant:o.montant!=null&&o.montant!==""?+o.montant:null,four:o.four||"",pour:o.pour||[],bcPar:o.bcPar||"moi",kind:o.kind||"achat",steps:{1:null,2:null,3:null,4:null,5:null,6:null,7:null},sign:{3:[],6:[]},...(o.achat||{})};return it}
+const achA=it=>it&&it.achat||{steps:{},sign:{}};
+function achCur(it){const s=achA(it).steps||{};for(let k=1;k<=7;k++)if(!s[k])return k;return 8}
+function achMissing(it){const k=achCur(it);if(k>7)return "";if(achA(it).bcPar==="achats"){if(k===1)return "Demande validée";if(k===2)return achA(it).mailAt?"Copie du BC à récupérer":"Demande aux Achats à envoyer"}return ACH_STEPS[k-1]}
+function achSince(it){const s=achA(it).steps||{};let last=null;for(let k=1;k<=7;k++)if(s[k]&&(!last||s[k]>last))last=s[k];last=last||it.createdAt;return Math.max(0,Math.floor((Date.now()-new Date(last||Date.now()))/864e5))}
+function achSync(it){const done=achCur(it)>7;it.status=done?"done":"todo";if(done&&!it.doneAt)it.doneAt=nowIso();if(!done)it.doneAt=null;return it}
+const achList=()=>[...ST.items.values()].filter(i=>i.type==="achat"&&!i.deletedAt&&!i.archived);
+function achSignQueue(){const q={};achList().forEach(it=>{const k=achCur(it);if(!ACH_SIGN.includes(k))return;const who=(achA(it).sign||{})[k]||[];(who.length?who:["À préciser"]).forEach(n=>{(q[n]=q[n]||[]).push(it)})});return q}
+const achSet=()=>({signers:[],dest:[],configs:[],sig:"",...((ST.settings&&ST.settings.achats)||{})});
+function achPutSet(p){putSettings({achats:{...achSet(),...p}})}
+
+/* ---------- fiche dossier (tiroir) ---------- */
+const achNum=v=>{const x=String(v==null?"":v).replace(/[\s  ]/g,"").replace(",",".").replace(/[^\d.]/g,"");return x?+x:null};
+const achFmt=n=>n==null||isNaN(n)?"":Math.round(n).toLocaleString("fr-FR").replace(/[  ]/g," ")+" DH";
+const achDate=d=>{if(!d)return"";const x=new Date(d);return x.getDate()+" "+["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."][x.getMonth()]};
+function achStepsHTML(it){const a=achA(it),cur=achCur(it),signers=achSet().signers;
+ return ACH_STEPS.map((l,i)=>{const k=i+1,d=a.steps[k];const lbl=a.bcPar==="achats"&&k===1?"Demande validée":a.bcPar==="achats"&&k===2?"Copie du BC récupérée":l;
+  const who=(a.sign||{})[k]||[];const chips=ACH_SIGN.includes(k)?`<div class="ach-sig">${[...new Set([...signers,...who])].map(n=>`<button class="tool ${who.includes(n)?"on":""}" data-achsig="${k}" data-who="${esc(n)}">${esc(n)}</button>`).join("")}<button class="tool" data-achsigadd="${k}">+ Ajouter</button></div>`:"";
+  return `<div class="ach-st ${d?"done":""} ${k===cur?"cur":""}"><button class="ach-ck" data-achstep="${k}" aria-label="${esc(lbl)}">${d?ICN.check:""}</button><div class="ach-sl"><b>${esc(lbl)}</b>${d?`<small>${achDate(d)}</small>`:k===cur?`<small>à faire</small>`:""}${chips}</div></div>`}).join("")}
+function achOpen(id){let it=id&&ST.items.get(id);if(!it){it=achNew({});putItem(it)}U.ach={id:it.id,isNew:!id};U.cmp=null;const a=achA(it);const d=$("#drawer");d.classList.remove("qs","compose","more18");d.classList.add("achd");
+ d.innerHTML=`<div class="cmp-top"><button class="cmp-x" data-act="achclose" aria-label="Fermer">${I.x}</button><span class="cmp-st">Dossier d'achat</span><button class="btn pri cmp-done" data-act="achclose">Terminé</button></div>
+ <div class="db ach-db"><input id="acht" class="cmp-t" placeholder="Quoi ? ex. Écrans salle de réunion" autocomplete="off" value="${esc(it.title||"")}">
+ <div id="achnx">${achNextHTML(it)}</div>
+ <div class="ach-meta"><label><span>Montant TTC</span><input id="achm" inputmode="decimal" placeholder="0 DH" value="${a.montant!=null?esc(Math.round(a.montant)===a.montant?Math.round(a.montant).toLocaleString("fr-FR").replace(/[  ]/g," "):String(a.montant).replace(".",",")):""}"></label><label><span>Fournisseur</span><input id="achf" list="achfl" placeholder="—" value="${esc(a.four||"")}"></label><label class="w"><span>Pour qui</span><input id="achp" placeholder="Noms, séparés par des virgules" value="${esc((a.pour||[]).join(", "))}"></label></div>
+ <datalist id="achfl">${[...new Set(achList().map(i=>achA(i).four).filter(Boolean))].map(f=>`<option value="${esc(f)}">`).join("")}</datalist>
+ <div class="ach-bc"><span>BC fait par</span><button class="tool ${a.bcPar!=="achats"?"on":""}" data-achbc="moi">Moi</button><button class="tool ${a.bcPar==="achats"?"on":""}" data-achbc="achats">Les Achats</button></div>
+ <div class="ach-steps" id="achsteps">${achStepsHTML(it)}</div><div id="achx"></div>
+ <textarea id="achb" class="cmp-b" placeholder="Notes : références, contacts, ce qui reste…">${esc(it.body||"")}</textarea>
+ <details class="cmp-more ach-more"><summary class="tool">⋯</summary><div class="cmp-menu"><button class="tool" data-achdel="1">Supprimer le dossier</button></div></details></div>`;
+ d.classList.add("on");$("#scrim").classList.add("on");if(U.ach.isNew)setTimeout(()=>{const t=$("#acht");t&&t.focus()},60);achExtras()}
+function achExtras(){}
+function achRead(){const c=U.ach;if(!c)return null;const it=ST.items.get(c.id);if(!it)return null;const t=$("#acht");if(!t)return it;
+ const a={...achA(it),montant:achNum($("#achm").value),four:$("#achf").value.trim(),pour:$("#achp").value.split(",").map(x=>x.trim()).filter(Boolean)};
+ return {...it,title:t.value.trim().replace(/^./,x=>x.toUpperCase()),body:$("#achb").value,achat:a}}
+function achSave(){const n=achRead();if(n)putItem(achSync(n));return n}
+function achRefresh(){const it=ST.items.get(U.ach&&U.ach.id);const s=$("#achsteps");if(it&&s)s.innerHTML=achStepsHTML(it);const nx=$("#achnx");if(it&&nx)nx.innerHTML=achNextHTML(it);achExtras()}
+document.addEventListener("input",e=>{if(!U.ach||!e.target||!e.target.closest||!e.target.closest(".ach-db"))return;clearTimeout(U.achT);U.achT=setTimeout(achSave,400)});
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-achstep],[data-achsig],[data-achsigadd],[data-achbc],[data-achdel],[data-act=achclose]");if(!t||!U.ach)return;e.preventDefault();e.stopImmediatePropagation();
+ const n=achRead();if(!n)return;const a=n.achat;
+ if(t.dataset.act==="achclose")return achClose();
+ if(t.dataset.achstep){const k=+t.dataset.achstep;a.steps={...a.steps,[k]:a.steps[k]?null:nowIso()};putItem(achSync(n));try{navigator.vibrate&&navigator.vibrate(8)}catch(_){}return achRefresh()}
+ if(t.dataset.achsig){const k=+t.dataset.achsig,w=t.dataset.who;const L=(a.sign||{})[k]||[];a.sign={...a.sign,[k]:L.includes(w)?L.filter(x=>x!==w):[...L,w]};putItem(achSync(n));return achRefresh()}
+ if(t.dataset.achsigadd){const k=+t.dataset.achsigadd;const w=(prompt("Qui signe ?")||"").trim();if(!w)return;const S=achSet();if(!S.signers.includes(w))achPutSet({signers:[...S.signers,w]});const L=(a.sign||{})[k]||[];a.sign={...a.sign,[k]:L.includes(w)?L:[...L,w]};putItem(achSync(n));return achRefresh()}
+ if(t.dataset.achbc){a.bcPar=t.dataset.achbc;putItem(achSync(n));document.querySelectorAll("[data-achbc]").forEach(b=>b.classList.toggle("on",b.dataset.achbc===a.bcPar));return achRefresh()}
+ if(t.dataset.achdel){const it=ST.items.get(U.ach.id);U.ach=null;closeDrawer();putItem({...it,deletedAt:nowIso()});toast("Dossier supprimé",()=>putItem({...ST.items.get(it.id),deletedAt:null}),"",6000)}},true);
+function achClose(){clearTimeout(U.achT);const n=achSave();const c=U.ach;U.ach=null;$("#drawer").classList.remove("achd");closeDrawer();
+ if(n&&!n.title&&!Object.values(n.achat.steps).some(Boolean)&&n.achat.montant==null&&!n.achat.four)hardDelete("items",n.id);
+ else if(n&&c&&c.isNew)toast("Dossier enregistré");render()}
+{const _cd19=closeDrawer;closeDrawer=function(){if(U.ach){const c=U.ach;U.ach=null;clearTimeout(U.achT);const it=ST.items.get(c.id);if(it&&$("#acht")){const n={...it,title:$("#acht").value.trim()};if(n.title||Object.values(achA(it).steps).some(Boolean))putItem(n);else hardDelete("items",it.id)}}$("#drawer").classList.remove("achd");return _cd19.apply(this,arguments)}}
+/* un dossier s'ouvre toujours dans sa fiche */
+{const _oc19=openComposer;openComposer=function(o={}){const it=o.id&&ST.items.get(o.id);if(it&&it.type==="achat")return achOpen(it.id);return _oc19(o)}}
+{const _oi19=openItem;openItem=function(id){const it=ST.items.get(id);if(it&&it.type==="achat")return achOpen(id);return _oi19.apply(this,arguments)}}
+
+/* ---------- mail aux Achats (format habituel, brouillon Gmail ou copie) ---------- */
+function achMail(it,destIdx,configIdx){const S=achSet();const d=S.dest[destIdx]||{};const a=achA(it);
+ const src=configIdx>=0&&S.configs[configIdx]?S.configs[configIdx].lignes:(it.body||"");
+ const lines=String(src).split("\n").map(l=>l.replace(/^\s*[-*•◦]\s*/,"").trim()).filter(Boolean);
+ const users=(a.pour||[]).filter(Boolean);const many=users.length>1;
+ const block=u=>(u?"• Utilisateur : "+u+"\n":"")+lines.map(l=>"• "+l).join("\n");
+ const sig=S.sig||((window.KUSER&&KUSER.displayName)||"").split(" ")[0]||"";
+ const body=`Bonjour ${(d.nom||"").split(" ")[0]||""},\n\nSuite à la validation de la demande d'achat, veuillez trouver ci-dessous ${many?"les références préconisées":"la référence préconisée"} par la Direction Informatique pour le traitement de la commande :\n\n${(users.length?users:[""]).map(block).join("\n\n")}\n\nBien à toi,\n${sig}`.replace(/Bonjour ,/,"Bonjour,");
+ return {to:d.email||"",cc:String(d.cc||"").split(/[,;]/).map(x=>x.trim()).filter(Boolean),subject:"Référence équipement informatique – Demande d'achat",body}}
+achExtras=function(){const box=$("#achx");const c=U.ach;if(!box||!c)return;const it=ST.items.get(c.id);if(!it||achA(it).bcPar!=="achats"){box.innerHTML="";return}const S=achSet();if(c.dest==null)c.dest=0;
+ box.innerHTML=`<div class="ach-mail"><div class="lbl2" style="margin-top:0">Mail aux Achats</div>
+ <div class="ach-chips"><span>À</span>${S.dest.map((x,i)=>`<button class="tool ${i===c.dest?"on":""}" data-achdest="${i}">${esc(x.nom||x.email)}</button>`).join("")}<button class="tool" data-act="achdestadd">+ Destinataire</button></div>
+ <div class="ach-chips"><span>Config</span>${S.configs.map((x,i)=>`<button class="tool" data-achcfg="${i}">${esc(x.nom)}</button>`).join("")}<button class="tool" data-act="achcfgsave">Garder comme configuration</button></div>
+ ${achA(it).mailAt?`<button class="tool" data-act="achmail">✉ Rouvrir le mail</button>`:""}<p class="sub ach-hint">Les références viennent des notes ci-dessous, un bloc par personne de « Pour qui ».</p></div>`};
+/* le mail s'ouvre tout rempli : appli mail du téléphone, ou « Nouveau message » Gmail sur PC */
+function achGo(url){if(/^mailto:/.test(url))location.href=url;else if(!window.open(url,"_blank"))location.href=url}
+function achMailUrl(m){const e=encodeURIComponent;
+ if(matchMedia("(pointer:coarse)").matches)return "mailto:"+e(m.to)+"?"+[m.cc.length?"cc="+e(m.cc.join(",")):"","subject="+e(m.subject),"body="+e(m.body.replace(/\n/g,"\r\n"))].filter(Boolean).join("&");
+ return "https://mail.google.com/mail/?view=cm&fs=1&to="+e(m.to)+(m.cc.length?"&cc="+e(m.cc.join(",")):"")+"&su="+e(m.subject)+"&body="+e(m.body)}
+function achSendMail(){const n=achSave();if(!n)return;const S=achSet();if(!S.dest.length){toast("Ajoute d'abord à qui l'envoyer (+ Destinataire).");return}if(!(n.achat.pour||[]).length&&!(n.body||"").trim()){toast("Indique pour qui et les références (notes).");return}
+ const m=achMail(n,U.ach.dest||0,-1);achGo(achMailUrl(m));putItem({...n,achat:{...n.achat,mailAt:nowIso()}});toast("Mail ouvert, tout rempli : relis et envoie");achRefresh()}
+/* ---------- le bouton qui dirige : toujours la seule prochaine chose à faire ---------- */
+function achNextLabel(it){const a=achA(it),k=achCur(it);if(k>7)return null;
+ if(k===2&&a.bcPar==="achats"&&!a.mailAt)return {act:"mail",t:"✉ Envoyer la demande aux Achats"};
+ const who=ACH_SIGN.includes(k)&&((a.sign||{})[k]||[]).length?" ("+a.sign[k].join(", ")+")":"";
+ const L={1:a.bcPar==="achats"?"✓ Demande validée":"✓ Devis validé",2:a.bcPar==="achats"?"✓ Copie du BC récupérée":"✓ J'ai fait le BC",3:"✓ BC signé"+who,4:"✓ Facture reçue",5:"✓ Ajoutée au suivi budgétaire",6:"✓ Signée au parapheur"+who,7:"✓ Remis à la Finance"};return {act:"step",k,t:L[k]}}
+function achNextHTML(it){const n=achNextLabel(it);if(!n)return `<div class="ach-next done">Dossier terminé ✓</div>`;return `<div class="ach-next"><span>Prochaine étape</span><button class="btn pri" id="achnext" data-achnext="${n.act}" ${n.k?`data-k="${n.k}"`:""}>${esc(n.t)}</button></div>`}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("#achnext");if(!t||!U.ach)return;e.preventDefault();e.stopImmediatePropagation();
+ if(t.dataset.achnext==="mail")return achSendMail();const n=achRead();if(!n)return;const k=+t.dataset.k;n.achat.steps={...n.achat.steps,[k]:nowIso()};putItem(achSync(n));try{navigator.vibrate&&navigator.vibrate(10)}catch(_){}
+ if(achCur(n)>7)toast("Dossier terminé ✓");achRefresh()},true);
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-achdest],[data-achcfg],[data-act=achdestadd],[data-act=achcfgsave],[data-act=achmail]");if(!t||!U.ach)return;e.preventDefault();e.stopImmediatePropagation();const S=achSet();
+ if(t.dataset.achdest!=null){U.ach.dest=+t.dataset.achdest;return achExtras()}
+ if(t.dataset.achcfg!=null){const cf=S.configs[+t.dataset.achcfg];if(!cf)return;const b=$("#achb");b.value=cf.lignes;b.dispatchEvent(new Event("input",{bubbles:true}));toast("Configuration « "+cf.nom+" » mise dans les notes");return}
+ const a=t.dataset.act;
+ if(a==="achdestadd"){const nom=(prompt("Nom du destinataire (ex. prénom nom) :")||"").trim();if(!nom)return;const email=(prompt("Son adresse mail :")||"").trim();const cc=(prompt("En copie (facultatif, séparés par des virgules) :")||"").trim();achPutSet({dest:[...S.dest,{nom,email,cc}]});U.ach.dest=S.dest.length;return achExtras()}
+ if(a==="achcfgsave"){const l=($("#achb").value||"").trim();if(!l){toast("Écris d'abord les références dans les notes.");return}const nom=(prompt("Nom de cette configuration (ex. PC standard) :")||"").trim();if(!nom)return;achPutSet({configs:[...S.configs.filter(x=>x.nom!==nom),{nom,lignes:l}]});toast("Configuration « "+nom+" » gardée");return achExtras()}
+ if(a==="achmail")return achSendMail()},true);
+
+/* ---------- Écrire : « 📁 En faire un dossier d'achat » quand on parle de BC, devis, facture, résiliation, contrat ---------- */
+const ACH_RE=/(^|[^a-z])(bc|bdc|bons? de commande|devis|factures?|resiliations?|contrats?|parapheur)([^a-z]|$)/;
+function achPillPaint(){const c=U.cmp,b=$("#cmpb");if(!c||!b)return;const txt=norm((($("#cmpt")||{}).value||"")+" "+b.value);let x=$("#cmpach");
+ if(!x){x=document.createElement("button");x.type="button";x.id="cmpach";x.className="tool cmp-when";x.hidden=true;x.textContent="📁 En faire un dossier d'achat";const w=$("#cmpwhen"),sp=$("#cmpsp");if(w)w.after(x);else if(sp)sp.before(x);else b.after(x)}
+ const it=c.id&&ST.items.get(c.id);x.hidden=!ACH_RE.test(txt)||!!(it&&it.type==="task"&&it.status==="done")}
+document.addEventListener("input",e=>{if(!U.cmp||!e.target||(e.target.id!=="cmpb"&&e.target.id!=="cmpt"))return;clearTimeout(U.achPT);U.achPT=setTimeout(achPillPaint,260)});
+document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest("#cmpach");if(!x||!U.cmp)return;e.preventDefault();e.stopImmediatePropagation();
+ clearTimeout(U.cmp.t);cmpSave(false);const c=U.cmp;const t=(($("#cmpt")||{}).value||"").trim(),b=(($("#cmpb")||{}).value||"");const L=b.trim().split("\n");
+ const title=t||L[0].trim().slice(0,140),body=t?b:L.slice(1).join("\n").trim();const old=c.id&&ST.items.get(c.id);
+ const kind=/resiliation/.test(norm(title+" "+body))?"resiliation":/contrat/.test(norm(title+" "+body))?"contrat":"achat";
+ const a=achNew({title,body,space:c.space||null,kind});if(old){a.id=old.id;a.createdAt=old.createdAt}
+ if(old&&old.remindAt){a.remindAt=old.remindAt;a.reminded=old.reminded}
+ putItem(a);try{localStorage.removeItem("k_cmpdraft")}catch(_){}U.cmp=null;$("#drawer").classList.remove("compose");achOpen(a.id);U.ach.isNew=true},true);
+
+/* ---------- page Achats ---------- */
+if(!VIEWS.includes("achats"))VIEWS.push("achats");try{V_TITLE.achats="Achats"}catch(_){}
+function achRow(it){const a=achA(it),cur=achCur(it),n=achSince(it);const meta=[achFmt(a.montant),a.four].filter(Boolean).join(" · ");
+ const miss=cur>7?"Terminé":"manque : "+achMissing(it)+(n>=1?" · depuis "+n+" j":"");
+ return `<button class="ach-row ${cur<=7&&n>=7?"old":""}" data-open="${it.id}"><span class="ach-rt"><b>${esc(it.title||"Dossier sans titre")}</b>${meta?`<span>${esc(meta)}</span>`:""}</span><span class="ach-rm">${esc(miss)}</span><span class="ach-dots">${ACH_STEPS.map((_,i)=>`<i class="${a.steps[i+1]?"d":i+1===cur?"c":""}"></i>`).join("")}</span></button>`}
+V.achats=()=>{const L=achList().sort((x,y)=>new Date(y.updatedAt||y.createdAt)-new Date(x.updatedAt||x.createdAt));const q=achSignQueue();const inQ=new Set(Object.values(q).flat().map(i=>i.id));
+ const open=L.filter(i=>achCur(i)<=7&&!inQ.has(i.id)),fin=L.filter(i=>achCur(i)>7);
+ let h=`<div class="hdr"><div><h1>Achats</h1></div><div class="act"><button class="btn pri" data-act="achnew">+ Dossier</button></div></div>`;
+ if(!L.length)return h+`<div class="empty"><b>Aucun dossier pour l'instant.</b>Un devis validé, un BC, une facture : touche « + Dossier ».</div>`;
+ const names=Object.keys(q).sort((a,b)=>q[b].length-q[a].length);
+ if(names.length)h+=`<div class="grp">À faire signer</div>`+names.map(nm=>`<div class="achq"><div class="achq-h"><b>${esc(nm)}</b><span class="n">${q[nm].length}</span></div><div class="ach-list">${q[nm].map(achRow).join("")}</div></div>`).join("");
+ if(open.length)h+=`<div class="grp">En cours <span class="n">${open.length}</span></div><div class="ach-list">${open.map(achRow).join("")}</div>`;
+ if(fin.length)h+=`<details class="ach-fin"><summary class="grp">Terminés <span class="n">${fin.length}</span></summary><div class="ach-list">${fin.slice(0,60).map(achRow).join("")}</div></details>`;
+ return h};
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=achnew]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();achOpen(null)},true);
+/* Plus : Achats sous « En attente de » */
+{const _ms19=moreSheet;moreSheet=function(){const r=_ms19.apply(this,arguments);const w=document.querySelector('#drawer [data-nav="waiting"]');if(w&&!document.querySelector('#drawer [data-nav="achats"]')){const n=Object.values(achSignQueue()).flat().length;
+ w.insertAdjacentHTML("afterend",`<button class="sp" style="display:flex;gap:12px;align-items:center;padding:12px 14px" data-nav="achats"><span class="ic" style="width:24px;height:24px">${ICN.edit||I.note}</span><div style="flex:1;min-width:0"><b style="font-size:15px">Achats</b><p style="margin:0">BC, factures, parapheur : qui doit signer quoi</p></div>${n?`<span class="chip t-task">${n}</span>`:""}</button>`)}return r}}
+{const i=MORE_V.indexOf("achats");if(i<0)MORE_V.push("achats")}
+/* Notes : les dossiers ont leur page, ils ne s'affichent pas dans Notes */
+{const _vn19=V.notes;V.notes=()=>{const L=achList();L.forEach(i=>{i.__ad=i.deletedAt;i.deletedAt="__ach"});try{return _vn19()}finally{L.forEach(i=>{i.deletedAt=i.__ad||null;delete i.__ad})}}}
+/* Aujourd'hui : « À faire signer » dans Maintenant */
+function achNowRow(){if(U.view!=="today")return;const v=$("#view");if(!v||v.querySelector(".know-sign"))return;const q=achSignQueue();const names=Object.keys(q);if(!names.length)return;
+ let k=v.querySelector(".know");if(!k){k=document.createElement("section");k.className="know";k.innerHTML=`<div class="know-h"><span>Maintenant</span><b>0</b></div>`;const w=v.querySelector(".writebtn");if(w)w.after(k);else v.prepend(k)}
+ const n=Object.values(q).flat().length;const hd=k.querySelector(".know-h b");if(hd)hd.textContent=String((+hd.textContent||0)+new Set(Object.values(q).flat().map(i=>i.id)).size);
+ k.querySelector(".know-h").insertAdjacentHTML("afterend",`<button class="know-sign" data-nav="achats"><b>À faire signer</b><span>${names.sort((a,b)=>q[b].length-q[a].length).map(nm=>esc(nm)+" ("+q[nm].length+")").join(" · ")}</span></button>`)}
+{const _r19=render;render=function(){_r19.apply(this,arguments);try{achNowRow()}catch(_){}}}
 
 document.body.classList.add("sa");
 boot();
