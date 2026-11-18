@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Kennach</title>
-<meta name="theme-color" content="#0A0908">
+<meta name="theme-color" content="#F5F3EE">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -834,7 +834,7 @@ body.noms [data-prov=ms],body.noms [data-act=mslink],body.noms .msonly{display:n
 
 body.sa [data-nav=mails],body.sa [data-nav=veille],body.sa [data-nav=photo],body.sa [data-nav=ask],body.sa [data-nav=import],body.sa [data-act=askact]{display:none!important}
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <style id="kdesign">/* ===== Kennach · « Maison » (v13) : noir, ivoire et or ===== */
 html body.sa{
  --serif:"Cormorant Garamond","Cormorant",Didot,"Bodoni 72","Playfair Display",Georgia,serif;
@@ -1306,6 +1306,59 @@ html body.sa .ach-next.done{font:600 15px/1.3 var(--f);color:var(--gold);padding
 html body.sa .ach-rt{flex-direction:column;align-items:flex-start;gap:2px}
 html body.sa .ach-rt b{max-width:100%;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 html body.sa .ach-rt span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+/* ================= v20 : design « Atelier » (ivoire, encre, DM Serif + DM Sans) — remplace l'or ================= */
+html body.sa{--serif:"DM Serif Display",Georgia,"Times New Roman",serif;--f:"DM Sans",-apple-system,BlinkMacSystemFont,"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;--f-d:var(--serif)}
+html.klight body.sa{--bg:#F5F3EE;--surface:#FFFFFF;--surface-2:#EEEBE4;--surface-3:#E2DED5;--ink:#161616;--text:#1E1E1E;--text-2:#55524C;--text-3:#77736B;--gold:#161616;--gold-2:#2B2B2B;--gold-3:#161616;--gold-grad:linear-gradient(180deg,#262626,#111111);--on-gold:#FFFFFF;--accent:#161616;--accent-soft:rgba(22,22,22,.06);--line:rgba(22,22,22,.2);--border:rgba(22,22,22,.09);--border-2:rgba(22,22,22,.16);--glow:transparent;--glow2:transparent;--red:#B3261E;--e1:0 1px 2px rgba(22,22,22,.04);--e2:0 18px 40px -24px rgba(22,22,22,.22);--e3:0 30px 80px -30px rgba(22,22,22,.28),0 0 0 1px var(--border)}
+html.kdark body.sa{--bg:#111111;--surface:#1A1A1A;--surface-2:#222222;--surface-3:#2C2C2C;--ink:#F3F1EC;--text:#E9E6E0;--text-2:#A9A59D;--text-3:#7B776F;--gold:#F3F1EC;--gold-2:#DEDAD2;--gold-3:#FFFFFF;--gold-grad:linear-gradient(180deg,#FFFFFF,#E3DFD7);--on-gold:#111111;--accent:#F3F1EC;--accent-soft:rgba(243,241,236,.07);--line:rgba(243,241,236,.22);--border:rgba(243,241,236,.08);--border-2:rgba(243,241,236,.15);--glow:transparent;--glow2:transparent;--red:#F2786C;--e1:0 1px 0 rgba(255,255,255,.03) inset;--e2:0 24px 50px -24px rgba(0,0,0,.8);--e3:0 40px 120px -30px rgba(0,0,0,.9),0 0 0 1px var(--border)}
+html body.sa{font-family:var(--f)}
+html body.sa h1,html body.sa h2,html body.sa .greet,html body.sa .hero,html body.sa .hero *,html body.sa .writebtn *,html body.sa .cmp-t,html body.sa .ncard-t,html body.sa .know-h span,html body.sa .achq-h b{font-style:normal!important}
+html body.sa .greet,html body.sa h1{background:none!important;-webkit-text-fill-color:currentColor!important;color:var(--ink)!important}
+html body.sa h1{letter-spacing:-.01em;font-weight:400}
+html body.sa::after,html body.sa::before{display:none!important}
+html body.sa .btn.pri,html body.sa .cmp-done{background:var(--gold-grad)!important;color:var(--on-gold)!important;box-shadow:none!important;border:0!important}
+html body.sa .lbl2,html body.sa .grp{letter-spacing:.12em}
+html body.sa .grp::before{color:var(--text-3)!important}
+html.klight body.sa .writebtn,html.kdark body.sa .writebtn{background:var(--surface)!important;border:1px solid var(--border-2)!important;box-shadow:var(--e1)!important}
+html body.sa .know,html body.sa .achq{background:var(--surface)!important}
+html body.sa .ach-st.cur,html body.sa .know-sign{background:var(--accent-soft)!important}
+#klogin{background:#F5F3EE!important;color:#161616!important;font-family:"DM Sans",-apple-system,"Segoe UI",system-ui,sans-serif!important}
+#klogin h1{font-family:"DM Serif Display",Georgia,serif!important;font-style:normal!important;font-weight:400!important;color:#161616!important;-webkit-text-fill-color:#161616!important;background:none!important;letter-spacing:-.01em!important}
+#klogin p,#klogin .klast{color:#55524C!important}
+#klogin .klast b{color:#161616!important}
+#klogin .lg{background:#161616!important;color:#F5F3EE!important;font-family:"DM Serif Display",Georgia,serif!important;font-style:normal!important}
+#klogin #kgo{background:#161616!important;color:#FFFFFF!important;border:0!important}
+#klogin button:not(#kgo){background:#FFFFFF!important;color:#161616!important;border:1px solid rgba(22,22,22,.16)!important}
+/* v20 : message qui ne bloque rien, au-dessus de la barre du bas */
+html body.sa .toast,html body.sa .toast.on{pointer-events:none!important}
+html body.sa .toast #tu,html body.sa .toast button{pointer-events:auto!important}
+@media (max-width:820px){html body.sa .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))!important}}
+/* v20 : la date d'Aujourd'hui n'est jamais coupée */
+html body.sa .hdr.hero{gap:12px}
+html body.sa .hdr.hero{flex-wrap:nowrap;align-items:flex-start}
+html body.sa .hdr.hero>div:first-child{flex:1 1 auto!important;min-width:0!important;width:auto!important}
+html body.sa .hdr.hero>.act{flex:0 0 auto!important;width:auto!important;min-width:0!important}
+html body.sa .hdr.hero .greet{white-space:nowrap!important;overflow:hidden;text-overflow:ellipsis;display:block}
+html body.sa .hdr.hero .date-big{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:break-word;font-size:clamp(34px,10.5vw,54px)!important;line-height:1.02!important}
+/* v20 : icônes fines à la place des émojis */
+html body.sa .kicw{display:inline-flex;vertical-align:-2px;margin-right:4px}
+html body.sa .kicw .kic{width:15px;height:15px}
+html.klight body.sa .greet,html.kdark body.sa .greet{color:var(--text-2)!important;-webkit-text-fill-color:var(--text-2)!important;letter-spacing:.18em}
+/* v20 : finitions Atelier vues sur capture */
+html body.sa,html body.sa *{font-synthesis-weight:none;font-synthesis:none}
+html body.sa .date-big,html body.sa .hero .date-big *{background:none!important;-webkit-text-fill-color:var(--ink)!important;color:var(--ink)!important;font-weight:400!important}
+html body.sa h1,html body.sa .know-h span,html body.sa .achq-h b,html body.sa .ncard-t,html body.sa .cmp-t{font-weight:400!important}
+html body.sa ::placeholder{font-style:normal!important}
+#klogin .lg{box-shadow:none!important;filter:none!important}
+#klogin .lg::before,#klogin .lg::after{display:none!important}
+html body.sa .toast{background:var(--ink)!important;color:var(--bg)!important;white-space:nowrap;max-width:calc(100% - 32px)}
+html body.sa .toast span{overflow:hidden;text-overflow:ellipsis}
+html body.sa .toast span::before{background:currentColor!important;opacity:.5}
+html body.sa .toast button{color:var(--bg)!important;opacity:.85}
+/* v20 : une note qui se ferme ne bloque plus les clics pendant son animation */
+html body.sa .drawer:not(.on){pointer-events:none!important}
+/* v20 : titre d'une note ou d'un dossier entier sur téléphone (DM Serif est large) */
+@media (max-width:820px){html body.sa #drawer .cmp-t{font-size:clamp(24px,7.4vw,30px)!important;letter-spacing:-.005em}}
 </style>
 </head>
 <body>
@@ -3380,7 +3433,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="19";
+const KVER="20";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3917,6 +3970,7 @@ document.addEventListener("click",e=>{const x=e.target.closest&&e.target.closest
  const kind=/resiliation/.test(norm(title+" "+body))?"resiliation":/contrat/.test(norm(title+" "+body))?"contrat":"achat";
  const a=achNew({title,body,space:c.space||null,kind});if(old){a.id=old.id;a.createdAt=old.createdAt}
  if(old&&old.remindAt){a.remindAt=old.remindAt;a.reminded=old.reminded}
+ if(old&&old.due)a.due=old.due;
  putItem(a);try{localStorage.removeItem("k_cmpdraft")}catch(_){}U.cmp=null;$("#drawer").classList.remove("compose");achOpen(a.id);U.ach.isNew=true},true);
 
 /* ---------- page Achats ---------- */
@@ -3936,7 +3990,7 @@ V.achats=()=>{const L=achList().sort((x,y)=>new Date(y.updatedAt||y.createdAt)-n
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=achnew]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();achOpen(null)},true);
 /* Plus : Achats sous « En attente de » */
 {const _ms19=moreSheet;moreSheet=function(){const r=_ms19.apply(this,arguments);const w=document.querySelector('#drawer [data-nav="waiting"]');if(w&&!document.querySelector('#drawer [data-nav="achats"]')){const n=Object.values(achSignQueue()).flat().length;
- w.insertAdjacentHTML("afterend",`<button class="sp" style="display:flex;gap:12px;align-items:center;padding:12px 14px" data-nav="achats"><span class="ic" style="width:24px;height:24px">${ICN.edit||I.note}</span><div style="flex:1;min-width:0"><b style="font-size:15px">Achats</b><p style="margin:0">BC, factures, parapheur : qui doit signer quoi</p></div>${n?`<span class="chip t-task">${n}</span>`:""}</button>`)}return r}}
+ w.insertAdjacentHTML("afterend",`<button class="sp" style="display:flex;gap:12px;align-items:center;padding:12px 14px" data-nav="achats"><span class="ic" style="width:24px;height:24px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg></span><div style="flex:1;min-width:0"><b style="font-size:15px">Achats</b><p style="margin:0">BC, factures, parapheur : qui doit signer quoi</p></div>${n?`<span class="chip t-task">${n}</span>`:""}</button>`)}return r}}
 {const i=MORE_V.indexOf("achats");if(i<0)MORE_V.push("achats")}
 /* Notes : les dossiers ont leur page, ils ne s'affichent pas dans Notes */
 {const _vn19=V.notes;V.notes=()=>{const L=achList();L.forEach(i=>{i.__ad=i.deletedAt;i.deletedAt="__ach"});try{return _vn19()}finally{L.forEach(i=>{i.deletedAt=i.__ad||null;delete i.__ad})}}}
@@ -3946,6 +4000,38 @@ function achNowRow(){if(U.view!=="today")return;const v=$("#view");if(!v||v.quer
  const n=Object.values(q).flat().length;const hd=k.querySelector(".know-h b");if(hd)hd.textContent=String((+hd.textContent||0)+new Set(Object.values(q).flat().map(i=>i.id)).size);
  k.querySelector(".know-h").insertAdjacentHTML("afterend",`<button class="know-sign" data-nav="achats"><b>À faire signer</b><span>${names.sort((a,b)=>q[b].length-q[a].length).map(nm=>esc(nm)+" ("+q[nm].length+")").join(" · ")}</span></button>`)}
 {const _r19=render;render=function(){_r19.apply(this,arguments);try{achNowRow()}catch(_){}}}
+
+/* ================= v20 : design Atelier + bugs du robot ================= */
+/* [B] émojis d'interface → icônes fines (règle de design). Le texte de l'utilisateur n'est jamais touché. */
+const K20_SVG=p=>`<svg class="kic" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+const K20_ICON={
+ "⏳":K20_SVG('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'),
+ "☑":K20_SVG('<rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'),
+ "📌":K20_SVG('<path d="M9 4h6l-1 5 3 3H7l3-3z"/><path d="M12 15v5"/>'),
+ "📅":K20_SVG('<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M9 3v4M15 3v4"/>'),
+ "🗓":K20_SVG('<rect x="4" y="5" width="16" height="15" rx="2.5"/><path d="M4 10h16M9 3v4M15 3v4"/>'),
+ "🔔":K20_SVG('<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'),
+ "✉":K20_SVG('<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="m4.5 7 7.5 6 7.5-6"/>'),
+ "📁":K20_SVG('<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>'),
+ "🎙":K20_SVG('<rect x="9" y="3.5" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3.5"/>'),
+ "📓":K20_SVG('<path d="M6 4h11a1 1 0 0 1 1 1v15H7a2 2 0 0 1-2-2V5a1 1 0 0 1 1-1z"/><path d="M9 8h6"/>'),
+ "📥":K20_SVG('<path d="M4 13h4l1.5 2.5h5L16 13h4v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M12 4v8m-3-3 3 3 3-3"/>'),
+ "⬇":K20_SVG('<path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/>')
+};
+const K20_ANY=/(?![\u2713\u2714\u2717\u2715])[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{1F000}-\u{1F2FF}\u{231A}-\u{23FF}\u{25B6}\u{25C0}]\u{FE0F}?/gu;
+const K20_USER=".ttl,.ncard-t,.ncard-s,.mdv,.cmp-t,.cmp-b,textarea,input,select,.krem-r span,.ach-rt b,.fbody,.pv,.cmp-pv,[contenteditable]";
+function k20Clean(root){if(!root||!root.querySelectorAll)return;const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const el=n.parentElement;if(!el||el.closest(K20_USER))return NodeFilter.FILTER_REJECT;K20_ANY.lastIndex=0;return K20_ANY.test(n.textContent)&&!/^[✓✔→←↻↺·•…]$/.test(n.textContent.trim())?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP}});
+ const L=[];let n;while(n=tw.nextNode())L.push(n);
+ L.forEach(n=>{const parts=n.textContent.split(K20_ANY);const emos=n.textContent.match(K20_ANY)||[];if(!emos.length)return;const frag=document.createDocumentFragment();
+  parts.forEach((t,i)=>{if(i>0){const e=emos[i-1].replace("️","");const ic=K20_ICON[e];if(ic){const s=document.createElement("span");s.className="kicw";s.innerHTML=ic;frag.appendChild(s)}else{t=t.replace(/^\s+/,i===1&&!parts[0].trim()?"":" ")}}
+   if(i===0&&emos.length&&!t.trim())t="";frag.appendChild(document.createTextNode(t))});
+  n.replaceWith(frag)})}
+{let pend=false;const mo=new MutationObserver(()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;["#view","#drawer","#toast","#side","#bnav","#mtop","#pal"].forEach(s=>k20Clean($(s)))})});
+ ["#view","#drawer","#toast","#side","#bnav","#mtop"].forEach(s=>{const e=$(s);if(e)mo.observe(e,{childList:true,subtree:true,characterData:true})});const pl=$("#pal");if(pl)mo.observe(pl,{childList:true,subtree:true})}
+{const _r20=render;render=function(){_r20.apply(this,arguments);["#view","#side","#bnav","#mtop"].forEach(s=>k20Clean($(s)))}}
+{const _t20=toast;toast=function(){const r=_t20.apply(this,arguments);k20Clean($("#toast"));return r}}
+/* [B] Reprendre = des notes ; les dossiers d'achat ont leur page */
+{const _vt20=V.today;V.today=()=>{const L=achList();L.forEach(i=>{i.__ad=i.deletedAt;i.deletedAt="__ach"});try{return _vt20()}finally{L.forEach(i=>{i.deletedAt=i.__ad||null;delete i.__ad})}}}
 
 document.body.classList.add("sa");
 boot();

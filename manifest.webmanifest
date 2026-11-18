@@ -4,8 +4,8 @@
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
- "background_color": "#0A0908",
- "theme_color": "#0A0908",
+ "background_color": "#F5F3EE",
+ "theme_color": "#F5F3EE",
  "lang": "fr",
  "description": "Ton carnet. Écrire, retrouver, avancer.",
  "icons": [
