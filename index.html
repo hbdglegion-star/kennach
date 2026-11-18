@@ -305,7 +305,7 @@ kbd{font:11px var(--mono);border:1px solid var(--border);border-bottom-width:2px
 .item{position:relative;display:flex;gap:12px;align-items:flex-start;padding:11px 14px;background:var(--surface);min-height:48px;transition:transform .2s var(--sheet),background .12s;touch-action:pan-y}
 .item:hover{background:var(--surface-2)}
 .item.sel{background:var(--accent-soft)}
-.chk{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--text-3);flex:none;margin-top:1px;display:grid;place-items:center;transition:all .12s}
+.chk{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--text-3);flex:none;margin-top:1px;display:grid;place-items:center;transition:opacity .12s,transform .12s,background-color .12s,border-color .12s,color .12s,box-shadow .12s}
 .chk.p1{border-color:var(--danger)}
 .chk:hover{border-color:var(--accent)}
 .chk.done{background:var(--ok);border-color:var(--ok)}
@@ -351,7 +351,7 @@ kbd{font:11px var(--mono);border:1px solid var(--border);border-bottom-width:2px
 .backl a{color:var(--accent);cursor:pointer;text-decoration:none}
 .histo{font-size:12px;color:var(--text-3);margin-top:16px}
 /* palette */
-.pal{position:fixed;left:50%;top:12vh;width:min(620px,calc(100% - 24px));transform:translate(-50%,-8px) scale(.98);opacity:0;pointer-events:none;background:var(--surface);border-radius:20px;box-shadow:var(--e3),0 0 0 1px var(--border);z-index:60;transition:all .2s var(--std);overflow:hidden}
+.pal{position:fixed;left:50%;top:12vh;width:min(620px,calc(100% - 24px));transform:translate(-50%,-8px) scale(.98);opacity:0;pointer-events:none;background:var(--surface);border-radius:20px;box-shadow:var(--e3),0 0 0 1px var(--border);z-index:60;transition:opacity .2s var(--std),transform .2s var(--std),background-color .2s var(--std),border-color .2s var(--std),color .2s var(--std),box-shadow .2s var(--std);overflow:hidden}
 .pal.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .pal input{width:100%;border:0;outline:0;background:none;padding:18px 20px;font-size:17px;border-bottom:1px solid var(--border)}
 .pres{max-height:52vh;overflow:auto;padding:6px}
@@ -361,7 +361,7 @@ kbd{font:11px var(--mono);border:1px solid var(--border);border-bottom-width:2px
 .pr mark{background:none;color:var(--accent);font-weight:600}
 .psec{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);padding:10px 12px 4px;font-weight:600}
 /* toast */
-.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:10px 14px 10px 16px;border-radius:12px;font-size:14px;display:flex;gap:14px;align-items:center;z-index:80;transition:all .2s var(--std);pointer-events:none;max-width:calc(100% - 24px)}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;background:var(--text);color:var(--bg);padding:10px 14px 10px 16px;border-radius:12px;font-size:14px;display:flex;gap:14px;align-items:center;z-index:80;transition:opacity .2s var(--std),transform .2s var(--std),background-color .2s var(--std),border-color .2s var(--std),color .2s var(--std),box-shadow .2s var(--std);pointer-events:none;max-width:calc(100% - 24px)}
 .toast.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
 .toast button{color:var(--accent);font-weight:600;filter:brightness(1.5)}
 .toast.danger{background:var(--danger);color:#fff}
@@ -530,7 +530,7 @@ body{font-feature-settings:"cv11","ss01";letter-spacing:-.006em}
 .mdv ul.cl{list-style:none;padding-left:0}
 .mdv ul.cl li{display:flex;gap:8px;align-items:flex-start;padding:2px 0}
 .mdv ul.cl li.on span{color:var(--text-3);text-decoration:line-through}
-.cbx{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text-3);flex:none;margin-top:3px;display:grid;place-items:center;font-size:12px;color:#fff;transition:all .12s}
+.cbx{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--text-3);flex:none;margin-top:3px;display:grid;place-items:center;font-size:12px;color:#fff;transition:opacity .12s,transform .12s,background-color .12s,border-color .12s,color .12s,box-shadow .12s}
 .cbx.on{background:var(--ok);border-color:var(--ok)}
 .mdv code{font-family:var(--mono);font-size:13px;background:var(--surface-2);padding:1px 5px;border-radius:5px}
 .mdv a{color:var(--accent);cursor:pointer;text-decoration:none}.mdv a:hover{text-decoration:underline}
@@ -748,7 +748,7 @@ body.sa .empty b{font-family:var(--display);font-size:20px}
 .acc-t{flex:1;min-width:0;display:flex;flex-direction:column}.acc-t b{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-t span{font-size:12.5px}.okc{color:var(--ok)}.warnc{color:var(--warn)}
 .acc-r{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0 48px}
-.chipb{padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:500;background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text-2);transition:all .15s}
+.chipb{padding:7px 12px;border-radius:999px;font-size:13.5px;font-weight:500;background:color-mix(in srgb,var(--text) 6%,transparent);color:var(--text-2);transition:opacity .15s,transform .15s,background-color .15s,border-color .15s,color .15s,box-shadow .15s}
 .chipb.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
 .cfgbox{margin-top:8px;padding:12px;border-radius:12px;background:color-mix(in srgb,var(--text) 4%,transparent)}
 .cfgbox code{font-size:12px;word-break:break-all}
@@ -889,19 +889,19 @@ html body.sa .rowx+.rowx{border-top:1px solid var(--border);border-radius:0}
 html body.sa .ttl{font-size:15px;font-weight:500;color:var(--ink);letter-spacing:-.005em}
 html body.sa .m{font-size:12.5px;color:var(--text-2)}
 html body.sa .m.late{color:#C0504D;font-weight:600}html body.sa .m.soon{color:var(--gold);font-weight:600}
-html body.sa .chk{width:20px;height:20px;border:1px solid var(--line);border-radius:5px;transition:all .2s}
+html body.sa .chk{width:20px;height:20px;border:1px solid var(--line);border-radius:5px;transition:opacity .2s,transform .2s,background-color .2s,border-color .2s,color .2s,box-shadow .2s}
 html body.sa .chk:hover{border-color:var(--gold);box-shadow:0 0 0 4px color-mix(in srgb,var(--gold) 12%,transparent)}
 html body.sa .chk.p1{border-color:#C0504D}
 html body.sa .chk.done{background:var(--gold-grad);border-color:transparent;color:var(--on-gold,#17130E)}
 /* --- boutons --- */
-html body.sa .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;background:transparent;color:var(--ink);border:1px solid var(--border-2);box-shadow:none;font-family:var(--f);font-size:13.5px;font-weight:600;letter-spacing:.01em;transition:all .2s}
+html body.sa .btn{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 18px;border-radius:999px;background:transparent;color:var(--ink);border:1px solid var(--border-2);box-shadow:none;font-family:var(--f);font-size:13.5px;font-weight:600;letter-spacing:.01em;transition:opacity .2s,transform .2s,background-color .2s,border-color .2s,color .2s,box-shadow .2s}
 html body.sa .btn:hover{border-color:var(--gold);color:var(--gold);background:color-mix(in srgb,var(--gold) 6%,transparent)}
 html body.sa .btn:active{transform:scale(.98)}
 html body.sa .btn.pri{background:var(--gold-grad);color:var(--on-gold,#17130E);border:0;box-shadow:0 1px 0 rgba(255,255,255,.45) inset,0 10px 24px -10px rgba(168,131,74,.7);letter-spacing:.03em}
 html body.sa .btn.pri:hover{color:var(--on-gold,#17130E);filter:brightness(1.06)}
 html body.sa .btn.danger{color:#C0504D;border-color:color-mix(in srgb,#C0504D 35%,transparent)}
 html body.sa .btn:disabled{opacity:.4}
-html body.sa .tool{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;background:transparent;color:var(--text-2);border:1px solid var(--border);font-size:12.5px;font-weight:500;letter-spacing:.01em;transition:all .2s}
+html body.sa .tool{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;border-radius:999px;background:transparent;color:var(--text-2);border:1px solid var(--border);font-size:12.5px;font-weight:500;letter-spacing:.01em;transition:opacity .2s,transform .2s,background-color .2s,border-color .2s,color .2s,box-shadow .2s}
 html body.sa .tool:hover{border-color:var(--line);color:var(--ink)}
 html body.sa .tool.on,html body.sa .pick .tool.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 html body.sa .seg{background:transparent;border:1px solid var(--border-2);border-radius:999px;padding:3px}
@@ -924,7 +924,7 @@ html body.sa .logo{width:30px;height:30px;border-radius:50%;background:var(--gol
 html body.sa .capbtn{background:transparent;border:1px solid var(--border-2);border-radius:999px;box-shadow:none!important;color:var(--text-3);height:38px;margin-bottom:12px}
 html body.sa .capbtn:hover{border-color:var(--gold);color:var(--gold)}
 html body.sa .capbtn kbd{font-family:var(--f);font-size:10px;border:1px solid var(--border);border-radius:6px;padding:0 5px;background:transparent;color:var(--text-3)}
-html body.sa .nav{height:36px;padding:0 12px;border-radius:999px;font-size:13.5px;font-weight:500;color:var(--text-2);gap:12px;transition:all .2s;margin:1px 0;position:relative}
+html body.sa .nav{height:36px;padding:0 12px;border-radius:999px;font-size:13.5px;font-weight:500;color:var(--text-2);gap:12px;transition:opacity .2s,transform .2s,background-color .2s,border-color .2s,color .2s,box-shadow .2s;margin:1px 0;position:relative}
 html body.sa .nav svg{color:var(--text-3);width:16px;height:16px}
 html body.sa .nav:hover{color:var(--ink);background:color-mix(in srgb,var(--gold) 6%,transparent)}
 html body.sa .nav.on{background:color-mix(in srgb,var(--gold) 12%,transparent);color:var(--ink);font-weight:600;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gold) 25%,transparent)}
@@ -1477,6 +1477,17 @@ html body.sa .warnpill{color:var(--ink)!important;background:var(--accent-soft)!
 html body.sa .ktoc{display:flex;flex-wrap:wrap;gap:8px;margin:-6px 0 18px}
 /* 46 « Annuler » en minuscules */
 html body.sa .toast #tu,html body.sa .toast button{text-transform:none!important;letter-spacing:0!important;font-size:13px!important}
+
+/* ================= v25 : finitions (skill make-interfaces-feel-better) ================= */
+html body.sa h1,html body.sa h2,html body.sa .date-big,html body.sa .ncard-t,html body.sa .know-h span,html body.sa .achq-h b,html body.sa .ach-rt b,html body.sa .ttl{text-wrap:balance}
+html body.sa .ncard-s,html body.sa .sub,html body.sa .empty,html body.sa .ach-hint,html body.sa .brief p{text-wrap:pretty}
+html body.sa .ct,html body.sa .n,html body.sa .know-h b,html body.sa .achq-h .n,html body.sa .ring text,html body.sa .meta .m,html body.sa .ach-rt span,html body.sa .ach-sl small,html body.sa .ringw,html body.sa #achm{font-variant-numeric:tabular-nums}
+html body.sa .file img,html body.sa .mdv img,html body.sa #drawer img{outline:1px solid rgba(0,0,0,.1);outline-offset:-1px}
+html.kdark body.sa .file img,html.kdark body.sa .mdv img,html.kdark body.sa #drawer img{outline-color:rgba(255,255,255,.1)}
+html body.sa .btn,html body.sa .tool,html body.sa .qk{transition:transform .15s ease-out,background-color .15s ease-out,border-color .15s ease-out,color .15s ease-out,box-shadow .15s ease-out}
+html body.sa .btn:active,html body.sa .tool:active,html body.sa .qk:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){html body.sa .btn:active,html body.sa .tool:active,html body.sa .qk:active{transform:none}}
+html body.sa a[aria-disabled="true"]{cursor:not-allowed;opacity:.6}
 </style>
 </head>
 <body>
@@ -3551,7 +3562,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="24";
+const KVER="25";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3769,7 +3780,7 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 {const _oc16=openComposer;openComposer=function(o={}){_oc16(o);const m=$("#drawer .cmp-menu");const c=U.cmp;if(!m||!c)return;const it=c.id&&ST.items.get(c.id);
  m.insertAdjacentHTML("beforeend",`${it?`<button class="tool" data-cmp2="dup">Dupliquer</button><button class="tool" data-cmp2="arch">${it.archived?"Désarchiver":"Archiver"}</button>`:""}${accounts().some(a=>a.roles&&a.roles.mail)?`<button class="tool" data-cmp2="gmail">Brouillon de mail</button>`:""}${c.task?`<button class="tool ${it&&it.repeat==="weekly"?"on":""}" data-cmp2="rep">Chaque semaine</button>`:""}`)}}
 document.addEventListener("click",async e=>{const t=e.target.closest&&e.target.closest("[data-cmp2]");if(!t||!U.cmp)return;e.preventDefault();e.stopImmediatePropagation();cmpSave(false);const c=U.cmp;const it=c.id&&ST.items.get(c.id);const a=t.dataset.cmp2;
- if(a==="dup"&&it){const x=newItem({...it,id:undefined,title:it.title+" (copie)",createdAt:nowIso(),pinned:false,archived:false,deletedAt:null});delete x.versions;x.id=nid("i");putItem(x);cmpSave(true);U.cmp=null;$("#drawer").classList.remove("compose");openComposer({id:x.id});toast("Copie créée");return}
+ if(a==="dup"&&it){const x=newItem({...it,id:undefined,title:it.title+" (copie)",createdAt:nowIso(),pinned:false,archived:false,deletedAt:null,remindAt:null,reminded:false});delete x.versions;x.id=nid("i");putItem(x);cmpSave(true);U.cmp=null;$("#drawer").classList.remove("compose");openComposer({id:x.id});toast("Copie créée");return}
  if(a==="arch"&&it){putItem({...it,archived:!it.archived});U.cmp=null;$("#drawer").classList.remove("compose");closeDrawer();toast(it.archived?"Note désarchivée":"Note archivée",()=>putItem({...ST.items.get(it.id),archived:!!it.archived}),"",6000);return}
  if(a==="gmail"){const ti=$("#cmpt").value,b=$("#cmpb").value;try{await CAP.mcp.callTool("Gmail","create_draft",{to:[],subject:ti||"Note",body:b,includeSignature:true});toast("Brouillon créé dans ta messagerie")}catch(er){toast(mcpErr(er,"Mail"),null,"danger",7000)}return}
  if(a==="rep"&&it){const on=it.repeat!=="weekly";putItem({...it,repeat:on?"weekly":null});t.classList.toggle("on",on);toast(on?"Se répète chaque semaine":"Ne se répète plus");return}},true);
@@ -3880,7 +3891,7 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 async function kNotify(it){const title="Kennach · rappel";const body=it.title||"Note";
  try{if("Notification" in window&&Notification.permission==="granted"){const r=navigator.serviceWorker&&await Promise.race([navigator.serviceWorker.getRegistration(),new Promise(z=>setTimeout(()=>z(null),800))]);if(r&&r.showNotification)await r.showNotification(title,{body,tag:"k-"+it.id,icon:"icon-192.png",data:{id:it.id}});else new Notification(title,{body,tag:"k-"+it.id})}}catch(_){}
  toast("🔔 "+body,null,"",10000);try{navigator.vibrate&&navigator.vibrate(60)}catch(_){}}
-function kRemTick(){if(!ST||!ST.items)return;const now=Date.now();for(const it of ST.items.values()){if(it.remindAt&&!it.reminded&&!it.deletedAt&&+new Date(it.remindAt)<=now){putItem({...it,reminded:true});kNotify(it)}}}
+function kRemTick(){if(!ST||!ST.items)return;const now=Date.now();for(const it of ST.items.values()){if(it.remindAt&&!it.reminded&&!it.deletedAt&&!(it.status==="done")&&+new Date(it.remindAt)<=now){putItem({...it,reminded:true});kNotify(it)}}}
 setInterval(kRemTick,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(kRemTick,800)});setTimeout(kRemTick,3000);
 /* notification touchée : la note s'ouvre */
 if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",e=>{const id=e.data&&e.data.kOpen;if(id&&ST.items.get(id))setTimeout(()=>openComposer({id}),200)});
@@ -3959,7 +3970,7 @@ function kNowBox(){if(U.view!=="today")return;const v=$("#view");if(!v||v.queryS
  const tod=take(grps.find(g=>/^aujourd'hui/i.test(g.textContent.trim())));
  const rep=take(grps.find(g=>/Reprendre o/.test(g.textContent)));if(rep)rep.forEach(e=>e&&e.remove());
  const seen=new Set([late,tod].flatMap(x=>x&&x[1]?[...x[1].querySelectorAll("[data-open]")].map(e=>e.dataset.open):[]));
- const t1=+today0()+864e5;const R=[...ST.items.values()].filter(i=>i.remindAt&&!i.reminded&&!i.deletedAt&&+new Date(i.remindAt)<t1&&!seen.has(i.id)).sort((a,b)=>new Date(a.remindAt)-new Date(b.remindAt));
+ const t1=+today0()+864e5;const R=[...ST.items.values()].filter(i=>i.remindAt&&!i.reminded&&!i.deletedAt&&i.status!=="done"&&+new Date(i.remindAt)<t1&&!seen.has(i.id)).sort((a,b)=>new Date(a.remindAt)-new Date(b.remindAt));
  const nL=late&&late[1]?late[1].querySelectorAll(":scope > *").length:0,nT=tod&&tod[1]?tod[1].querySelectorAll(":scope > *").length:0;
  if(!nL&&!nT&&!R.length){[late,tod].forEach(x=>x&&x.forEach(e=>e&&e.remove()));return}
  const box=document.createElement("section");box.className="know";box.innerHTML=`<div class="know-h"><span>Maintenant</span><b>${nL+nT+R.length}</b></div>`;
@@ -4273,7 +4284,7 @@ function k24Text(root){if(!root)return;const tw=document.createTreeWalker(root,N
 {const _vtk24=V.tasks;V.tasks=()=>_vtk24().replace(/<div class="sub">Ce qui est à faire, par projet\.<\/div>/,"").replace(/>! Urgentes seulement</,">Urgentes<")}
 /* ---------- C. Calendrier, En attente, Réunion, Projets ---------- */
 {const _vw24=V.waiting;V.waiting=()=>_vw24().replace(/Ce que les autres te doivent\. Tape ~nom pour en ajouter\./,"Ce que les autres te doivent.").replace(/(<div class="hdr"><div><h1>En attente de<\/h1>[\s\S]*?<\/div><\/div>)/,m=>m.replace(/<\/div>$/,`<div class="act"><button class="btn pri" data-act="waitnew">+ Quelqu'un me doit…</button></div></div>`)).replace(/Pour suivre une attente : t envoyer devis ~Karim/,"Touche « + Quelqu'un me doit… » pour suivre une attente.")}
-document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=waitnew]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();const it=newItem({type:"task",status:"waiting",title:"",waitingSince:nowIso()});putItem(it);openItem(it.id)},true);
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=waitnew]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();const it=newItem({type:"task",status:"waiting",title:"",waitingSince:nowIso()});putItem(it);openItem(it.id);U.k25wait=it.id},true);
 {const _vm24=V.meeting;V.meeting=()=>{let h=_vm24().replace(/<h1>Mode réunion<\/h1>/,"<h1>Réunion</h1>").replace(/<button class="tool" data-mins="\? ">\? Question<\/button>/,`<button class="tool" data-mins="? ">${K24_Q} Question</button>`);
  const R=recentSpaces(8);const chips=`<div class="pick k24msp"><button class="tool on" data-mspc="">Sans projet</button>${R.map(s=>`<button class="tool" data-mspc="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</button>`).join("")}</div>`;
  return h.replace(/(<select class="fld" id="msp")/,chips+"$1")}}
@@ -4327,6 +4338,22 @@ function k24Editor(){const d=$("#drawer");if(!d||d.classList.contains("compose")
 {const _r24m=render;render=function(){_r24m.apply(this,arguments);if(U.view!=="meeting")return;const s=$("#msp");if(!s)return;document.querySelectorAll("[data-mspc]").forEach(b=>b.classList.toggle("on",b.dataset.mspc===(s.value||"")))}}
 /* 9 (révisé) : en haut de page, le titre n'est pas répété ; dès qu'on fait défiler, il apparaît dans la barre du haut (règle 56 conservée) */
 {const m=()=>$("#main");const f=()=>{const e=m();document.body.classList.toggle("k24scr",!!e&&e.scrollTop>90)};document.addEventListener("scroll",f,true);const _r24s=render;render=function(){_r24s.apply(this,arguments);f()}}
+
+/* ================= v25 : améliorations trouvées avec les skills (parcours, sécurité, finitions, mise en ligne) ================= */
+/* CP-1 : fermer un dossier d'achat juste après avoir tapé garde tout (montant, fournisseur…), pas seulement le titre */
+/* CP-2 : « Quelqu'un me doit… » fermé sans rien écrire ne laisse pas d'élément fantôme */
+{const _cd25=closeDrawer;closeDrawer=function(){
+ if(U.ach&&$("#acht")){clearTimeout(U.achT);try{achSave()}catch(_){}}
+ const w=U.k25wait;const r=_cd25.apply(this,arguments);
+ if(w){U.k25wait=null;const it=ST.items.get(w);if(it&&!String(it.title||"").trim()&&!String(it.body||"").trim()&&!it.waitingOn)hardDelete("items",w)}
+ return r}}
+/* CP-3 : choisir une option du menu ⋯ referme le menu (les options arrêtent l'événement : on écoute avant elles) */
+window.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("details.cmp-more[open] .cmp-menu button,details.kmore[open] .kmore-m button");if(!b||b.matches("[data-tpl],[data-cmp3=remind]"))return;const d=b.closest("details");setTimeout(()=>{if(d&&d.isConnected)d.open=false},0)},true);
+/* SEC-1 : aucun lien affiché ne peut lancer de code (javascript:, data:…) : seuls https, http, mailto, tel et les ancres */
+const K25_SAFE=/^(https?:|mailto:|tel:|#|blob:|\/(?!\/)|\.\/)/i;
+function k25Links(root){if(!root)return;root.querySelectorAll("a[href]").forEach(a=>{const h=(a.getAttribute("href")||"").trim();if(h&&!K25_SAFE.test(h)){a.removeAttribute("href");a.setAttribute("aria-disabled","true");a.title="Lien bloqué (adresse non sûre)"}})}
+{const _r25=render;render=function(){_r25.apply(this,arguments);k25Links($("#view"))}}
+{let pend=false;const mo=new MutationObserver(()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;["#view","#drawer","#pal"].forEach(s=>k25Links($(s)))})});["#view","#drawer"].forEach(s=>{const e=$(s);if(e)mo.observe(e,{childList:true,subtree:true})})}
 
 document.body.classList.add("sa");
 boot();
