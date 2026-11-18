@@ -1433,6 +1433,50 @@ html body.sa .sw-ink{background:#161616!important;box-shadow:inset 0 0 0 2px var
 html.kdark body.sa .sw-ink{background:#F3F1EC!important}
 /* v22 : bandeau hors connexion sous la barre du haut, jamais par-dessus */
 @media (max-width:820px){html body.sa #koff{top:auto!important;bottom:calc(98px + env(safe-area-inset-bottom,0px))!important}}
+
+/* ================= v24 : 50 améliorations ================= */
+/* 1-4 barre fermée nette */
+html body.sa #side .nav svg{width:18px;height:18px;flex:none}
+html body.sa #side .kini{display:none}
+@media(min-width:821px){
+html body.sa.sidecol #side .capbtn{width:44px!important;height:44px!important;min-width:0!important;border-radius:50%!important;padding:0!important;display:grid!important;place-items:center!important;margin:10px auto!important;background:var(--ink)!important;color:var(--bg)!important;border:0!important}
+html body.sa.sidecol #side .capbtn svg{width:20px!important;height:20px!important}
+html body.sa.sidecol #side .nav{width:44px!important;height:44px!important;margin:2px auto!important;padding:0!important;display:grid!important;place-items:center!important;border-radius:12px!important}
+html body.sa.sidecol #side .nav svg{width:20px!important;height:20px!important}
+html body.sa.sidecol #side .nav[data-space] .dot{display:none!important}
+html body.sa.sidecol #side .nav[data-space] .kini{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:color-mix(in srgb,var(--c) 18%,transparent);color:var(--ink);font:600 13px/1 var(--f);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+html body.sa.sidecol #side .foot{justify-content:center}
+}
+/* 6-7 version et état en bas */
+html body.sa #side .k24v{font-size:11px;color:var(--text-3);margin-left:6px}
+html body.sa #side #synctxt{font-size:12px;color:var(--text-2)}
+/* 9-10 haut du téléphone */
+html body.sa #mtop>span:has(.mtt){opacity:0;transition:opacity .2s;pointer-events:none}
+html body.sa.k24scr #mtop>span:has(.mtt){opacity:1}
+html body.sa #syncdot2.k24ok{display:none!important}
+/* 11 cercle du jour plus petit et cliquable */
+html body.sa .ringw{cursor:pointer}
+/* 12 en retard : la date passe en gris, l'étiquette rouge suffit */
+html body.sa .body .kkind~.meta .m.late{color:var(--text-2)!important}
+/* 15 lien de projet dans le Brief */
+html body.sa .klink{border:0;background:none;padding:0;font:inherit;color:inherit;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+/* 22 plus de « K » décoratif dans les cases et états vides */
+html body.sa .empty::before,html body.sa .cd.empty::before,html body.sa .cd.empty::after{content:none!important;display:none!important}
+/* 20/35/37 petit menu ⋯ */
+html body.sa details.kmore{position:relative;display:inline-block}
+html body.sa details.kmore>summary{list-style:none;cursor:pointer}
+html body.sa details.kmore>summary::-webkit-details-marker{display:none}
+html body.sa details.kmore .kmore-m{position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:grid;gap:4px;padding:8px;min-width:200px;background:var(--surface);border:1px solid var(--border-2);border-radius:14px;box-shadow:0 20px 50px -20px rgba(0,0,0,.35)}
+html body.sa details.k24ed .kmore-m{right:auto;left:0;bottom:calc(100% + 6px);top:auto}
+/* 29 pastilles de projet en réunion */
+html body.sa .k24msp{margin-bottom:10px}
+html body.sa .k24msp~#msp,html body.sa .k24msp+select{display:none!important}
+/* 32 « Ajouter la prochaine action » en encre */
+html body.sa .warnpill{color:var(--ink)!important;background:var(--accent-soft)!important;border-color:var(--border-2)!important}
+/* 44 sommaire des Réglages */
+html body.sa .ktoc{display:flex;flex-wrap:wrap;gap:8px;margin:-6px 0 18px}
+/* 46 « Annuler » en minuscules */
+html body.sa .toast #tu,html body.sa .toast button{text-transform:none!important;letter-spacing:0!important;font-size:13px!important}
 </style>
 </head>
 <body>
@@ -3507,7 +3551,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="23";
+const KVER="24";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3814,7 +3858,7 @@ document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLower
 /* ================= [I] Rappel à une heure (depuis la page d'écriture, menu ⋯) ================= */
 const kRemFmt=d=>{d=new Date(d);const t=today0();const dd=Math.round((new Date(d).setHours(0,0,0,0)-t)/864e5);return (dd===0?"aujourd'hui":dd===1?"demain":fmtDate(d))+" à "+hm(d)};
 {const _oc17=openComposer;openComposer=function(o={}){_oc17(o);const m=$("#drawer .cmp-menu");const c=U.cmp;if(!m||!c)return;const it=c.id&&ST.items.get(c.id);const on=it&&it.remindAt&&!it.reminded;
- m.insertAdjacentHTML("afterbegin",`<button class="tool ${on?"on":""}" data-cmp3="remind">🔔 ${on?"Rappel "+esc(kRemFmt(it.remindAt)):"Me le rappeler"}</button>`)}}
+ m.insertAdjacentHTML("afterbegin",`<button class="tool ${on?"on":""}" data-cmp3="remind">🔔 ${on?"Rappel "+esc(kRemFmt(it.remindAt)):"Rappel"}</button>`)}}
 function kRemPanel(){const c=U.cmp;if(!c)return;let p=$("#cmprem");if(p){p.remove();return}const it=c.id&&ST.items.get(c.id);const on=it&&it.remindAt&&!it.reminded;
  const now=new Date();const pad=n=>String(n).padStart(2,"0");const loc=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
  const def=new Date(now.getTime()+36e5);def.setMinutes(0,0,0);
@@ -3824,7 +3868,7 @@ async function kRemSet(when){cmpSave(false);const c=U.cmp;const it=c&&c.id&&ST.i
  if(when===null){putItem({...it,remindAt:null,reminded:false});toast("Rappel retiré")}
  else{if(isNaN(when)||when<=Date.now()+30e3){toast("Choisis une heure à venir.");return}putItem({...it,remindAt:new Date(when).toISOString(),reminded:false});toast("🔔 Rappel "+kRemFmt(when));
   try{if("Notification" in window&&Notification.permission==="default")await Notification.requestPermission()}catch(_){}}
- const p=$("#cmprem");p&&p.remove();const b=document.querySelector('#drawer [data-cmp3="remind"]');const n=ST.items.get(it.id);if(b){const on=n&&n.remindAt&&!n.reminded;b.classList.toggle("on",!!on);b.textContent="🔔 "+(on?"Rappel "+kRemFmt(n.remindAt):"Me le rappeler")}}
+ const p=$("#cmprem");p&&p.remove();const b=document.querySelector('#drawer [data-cmp3="remind"]');const n=ST.items.get(it.id);if(b){const on=n&&n.remindAt&&!n.reminded;b.classList.toggle("on",!!on);b.textContent="🔔 "+(on?"Rappel "+kRemFmt(n.remindAt):"Rappel")}}
 document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-cmp3],[data-rem]");if(!t||!U.cmp)return;e.preventDefault();e.stopImmediatePropagation();
  if(t.dataset.cmp3==="remind")return kRemPanel();const v=t.dataset.rem;const d=new Date();
  if(v==="1h")return kRemSet(Date.now()+36e5);
@@ -4189,6 +4233,100 @@ document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest
 window.addEventListener("offline",()=>{setTimeout(()=>{const t=$("#toast");if(t&&/^Hors connexion/.test(t.textContent))t.classList.remove("on")},0)});
 /* [B] modèles sans syntaxe : « Décisions : » au lieu de « ## Décisions » */
 for(const k in KTPL){if(KTPL[k]&&KTPL[k][1])KTPL[k][1]=KTPL[k][1].replace(/^##\s*(.+)$/gm,"$1 :")}
+
+/* ================= v24 : 50 améliorations (revue « râleur » de chaque écran) ================= */
+const K24_FOLDER='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg>';
+const K24_Q='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.5a2.5 2.5 0 1 1 3.4 2.3c-.7.3-1 .8-1 1.5v.4M12 16.8v.2"/></svg>';
+const k24Plural=(n,s,p)=>n+" "+(n>1?p:s);
+/* ---------- A. barre latérale ---------- */
+{const _rs24=renderSide;renderSide=function(){_rs24.apply(this,arguments);const S=$("#side");if(!S)return;
+ /* 5 : Achats dans la barre, avec le nombre à faire signer */
+ if(!S.querySelector('[data-nav="achats"]')){const ref=S.querySelector('.nav[data-nav="meeting"]')||S.querySelector('.nav[data-nav="carnet"]');const n=new Set(Object.values(achSignQueue()).flat().map(i=>i.id)).size;
+  ref&&ref.insertAdjacentHTML("afterend",`<button class="nav ${U.view==="achats"?"on":""}" data-nav="achats">${K24_FOLDER}<span class="lbl">Achats</span><span class="ct" ${n?`title="${k24Plural(n,"dossier à faire signer","dossiers à faire signer")}"`:""}>${n||""}</span></button>`)}
+ /* 3 et 8 : infobulles */
+ S.querySelectorAll(".nav,.capbtn").forEach(b=>{const l=(b.querySelector(".lbl")||b.querySelector("span")||{}).textContent;if(l&&!b.title)b.title=l.trim()});
+ S.querySelectorAll(".nav[data-space]").forEach(b=>{const s=sp(b.dataset.space);if(!s)return;b.title=s.name;const ct=b.querySelector(".ct");const n=+(ct&&ct.textContent)||0;if(ct&&n){ct.title=k24Plural(n,"tâche ouverte","tâches ouvertes")}
+  if(!b.querySelector(".kini"))b.insertAdjacentHTML("afterbegin",`<span class="kini" style="--c:${s.color}">${esc((s.name.match(/[A-Za-zÀ-ÿ0-9]/)||["•"])[0].toUpperCase())}</span>`)});
+ /* 6 : version en bas, discrète */
+ const kv=S.querySelector(".brand .kver,.brand .vbadge,.brand [class*=ver]");const foot=S.querySelector(".foot");
+ if(foot&&!foot.querySelector(".k24v")){const t=document.createElement("span");t.className="k24v";t.textContent="v"+KVER;foot.insertBefore(t,foot.querySelector("button"))}
+ S.querySelectorAll(".brand *").forEach(e=>{if(e.children.length===0&&/^v\d+$/.test(e.textContent.trim()))e.remove()});
+ k24Sync()}}
+/* 7 et 10 : état d'enregistrement clair, point visible seulement en cas de souci */
+function k24Sync(){const t=$("#synctxt");if(!t)return;const off=!navigator.onLine,pend=ST&&ST.pending;const L=off?"Hors connexion : en attente":pend?"Enregistrement…":"Tout est enregistré";if(t.textContent!==L)t.textContent=L;
+ const d2=$("#syncdot2");if(d2)d2.classList.toggle("k24ok",!off&&!pend)}
+setInterval(()=>{try{k24Sync()}catch(_){}},1500);addEventListener("online",k24Sync);addEventListener("offline",k24Sync);
+/* ---------- textes partout (23, 25, 41, 42, 49) ---------- */
+const K24_MO={janv:"janv.",févr:"févr.",mars:"mars",avri:"avr.",mai:"mai",juin:"juin",juil:"juil.",août:"août",sept:"sept.",octo:"oct.",nove:"nov.",déce:"déc."};
+function k24Text(root){if(!root)return;const tw=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const el=n.parentElement;return !el||el.closest(K20_USER)?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}});let n;const L=[];while(n=tw.nextNode())L.push(n);
+ L.forEach(n=>{let s=n.textContent,o=s;
+  s=s.replace(/(\d{1,2}) (janv|févr|mars|avri|mai|juin|juil|août|sept|octo|nove|déce)\./g,(m,d,k)=>d+" "+K24_MO[k]);
+  s=s.replace(/^Auj\.$/,"Aujourd'hui").replace(/^Faits$/,"Terminés").replace(/Boîte à zéro\./,"Tout est trié.");
+  s=s.replace(/\b([01]) (éléments|espaces|personnes|tâches|notes|jours|relances)\b/g,(m,k,w)=>k+" "+w.replace(/s$/,""));
+  if(s!==o)n.textContent=s})}
+/* ---------- B. Aujourd'hui, Notes, Tâches ---------- */
+{const _vt24=V.today;V.today=()=>{let h=_vt24();
+ h=h.replace(/>Tout à aujourd'hui</,">Tout reporter à aujourd'hui<");
+ h=h.replace(/ Projet sans prochaine action : <b>([^<]*)<\/b>\./,(m,list)=>" Projet sans prochaine action : "+list.split(", ").map(nm=>{const s=spaces().find(x=>esc(x.name)===nm);return s?`<button class="klink" data-space="${s.id}">${nm}</button>`:nm}).join(", ")+".");
+ return h}}
+{const _vn24=V.notes;V.notes=()=>_vn24()}
+{const _vtk24=V.tasks;V.tasks=()=>_vtk24().replace(/<div class="sub">Ce qui est à faire, par projet\.<\/div>/,"").replace(/>! Urgentes seulement</,">Urgentes<")}
+/* ---------- C. Calendrier, En attente, Réunion, Projets ---------- */
+{const _vw24=V.waiting;V.waiting=()=>_vw24().replace(/Ce que les autres te doivent\. Tape ~nom pour en ajouter\./,"Ce que les autres te doivent.").replace(/(<div class="hdr"><div><h1>En attente de<\/h1>[\s\S]*?<\/div><\/div>)/,m=>m.replace(/<\/div>$/,`<div class="act"><button class="btn pri" data-act="waitnew">+ Quelqu'un me doit…</button></div></div>`)).replace(/Pour suivre une attente : t envoyer devis ~Karim/,"Touche « + Quelqu'un me doit… » pour suivre une attente.")}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=waitnew]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();const it=newItem({type:"task",status:"waiting",title:"",waitingSince:nowIso()});putItem(it);openItem(it.id)},true);
+{const _vm24=V.meeting;V.meeting=()=>{let h=_vm24().replace(/<h1>Mode réunion<\/h1>/,"<h1>Réunion</h1>").replace(/<button class="tool" data-mins="\? ">\? Question<\/button>/,`<button class="tool" data-mins="? ">${K24_Q} Question</button>`);
+ const R=recentSpaces(8);const chips=`<div class="pick k24msp"><button class="tool on" data-mspc="">Sans projet</button>${R.map(s=>`<button class="tool" data-mspc="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</button>`).join("")}</div>`;
+ return h.replace(/(<select class="fld" id="msp")/,chips+"$1")}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-mspc]");if(!t)return;e.preventDefault();const s=$("#msp");if(s){s.value=t.dataset.mspc;s.dispatchEvent(new Event("change",{bubbles:true}));s.dispatchEvent(new Event("input",{bubbles:true}))}document.querySelectorAll("[data-mspc]").forEach(b=>b.classList.toggle("on",b===t))});
+{const _vc24=V.carnet;V.carnet=()=>_vc24().replace(/<div class="sub">Tes projets, tes domaines et tes ressources\.<\/div>/,"").replace(/<span style="text-transform:none;letter-spacing:0;font-weight:400">· [^<]*<\/span>/g,"").replace(/⚠ Sans prochaine action · <u>\+ Ajouter<\/u>/g,"+ Ajouter la prochaine action").replace(/>Rangés sans espace </,">Sans projet <")}
+{const _vsp24=V.space;V.space=()=>_vsp24().replace(/(\d+)\/(\d+) tâches faites/,(m,d,t)=>`${d} tâche${+d>1?"s":""} faite${+d>1?"s":""} sur ${t}`).replace(/<div class="sub" style="font-size:12px;color:var\(--text-2\)">PROCHAINE ACTION<\/div>/,'<div class="lbl2" style="margin:0 0 4px">Prochaine action</div>').replace(/⚠ Ce projet n'a pas de prochaine action\./,"Pas encore de prochaine action.")}
+/* ---------- D. Revue, tri, Fiches ---------- */
+{const _vr24=V.review;V.review=()=>_vr24().replace(/(<h3[^>]*>|<b[^>]*>)5\. /,"$1")}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-act=gotoacc]");if(!t)return;e.preventDefault();e.stopImmediatePropagation();nav("settings");setTimeout(()=>{const h=[...document.querySelectorAll("#view .card b,#view .card h3,#view h2,#view h3")].find(x=>/Comptes connectés/.test(x.textContent));h&&h.scrollIntoView({behavior:"smooth",block:"start"})},120)},true);
+/* ---------- après chaque affichage ---------- */
+function k24After(){const v=$("#view");if(!v)return;
+ /* 9 : le nom de la page n'est pas répété en haut (téléphone) — CSS ; 11 : cercle du jour cliquable vers Tâches */
+ const rw=v.querySelector(".ringw");if(rw&&!rw.dataset.nav){rw.dataset.nav="tasks";rw.setAttribute("role","button");rw.title="Voir les tâches"}
+ /* 16 : Note du jour / Calendrier sous Écrire */
+ const wb=v.querySelector(".writebtn"),q=v.querySelector(".quick"),kn=v.querySelector(".know");const anc=kn||wb;if(anc&&q&&anc.nextElementSibling!==q)anc.after(q);
+ /* 13 : l'étiquette « Aujourd'hui / Demain » suffit : seulement l'heure */
+ v.querySelectorAll(".body").forEach(b=>{if(!b.querySelector(".kw-today,.kw-soon"))return;const m=b.querySelector(".meta .m");if(m&&/^(Aujourd'hui|Demain)( · )?/.test(m.textContent)){const r=m.textContent.replace(/^(Aujourd'hui|Demain)( · )?/,"");if(r)m.textContent=r;else m.remove()}});
+ /* 17 et 18 : Notes */
+ if(U.view==="notes"){v.querySelectorAll(".kk-note").forEach(e=>{const k=e.parentElement;e.remove();if(k&&!k.children.length)k.remove()});
+  if(!U.nq)v.querySelectorAll(".ncard[data-open] .ncard-s").forEach(s=>{const it=ST.items.get(s.closest(".ncard").dataset.open);if(!it||!/\[[ xX]\]/.test(it.body||""))return;const cs=checkStats(it.body);const rest=String(it.body).split("\n").filter(l=>!/^\s*[-*]\s+\[[ xX]\]/.test(l)).join(" ").replace(/^#+\s*/gm,"").replace(/\s+/g," ").trim().slice(0,120);s.textContent=(rest?rest+" · ":"")+k24Plural(cs.t,"case","cases")+" · "+k24Plural(cs.d,"faite","faites")})}
+ /* 20 et 35 : « Sélectionner » rangé dans ⋯ */
+ v.querySelectorAll('.hdr [data-act="selmode"]').forEach(b=>{if(b.closest(".kmore"))return;const d=document.createElement("details");d.className="kmore";d.innerHTML=`<summary class="btn" title="Autres actions">⋯</summary><div class="kmore-m"></div>`;b.replaceWith(d);d.querySelector(".kmore-m").appendChild(b)});
+ /* 24 : au doigt, on ne glisse pas */
+ if(matchMedia("(pointer:coarse)").matches)v.querySelectorAll(".unpl .sub").forEach(s=>{if(/Glisse/.test(s.textContent))s.textContent="Touche une tâche pour lui donner une date."});
+ /* 26 : À venir : « Samedi 28 novembre » */
+ if(U.view==="upcoming")v.querySelectorAll(".grp").forEach(g=>{const m=g.textContent.match(/· (\d{1,2}) (janvier|février|mars|avril|mai|juin|juillet|août|septembre|octobre|novembre|décembre)/);if(!m)return;const mo=MOIS.indexOf(m[2]);const now=new Date();let d=new Date(now.getFullYear(),mo,+m[1]);if(d<today0()-864e5*31)d.setFullYear(d.getFullYear()+1);const n=g.querySelector(".n");g.textContent=cap1(JOURS[d.getDay()])+" "+m[1]+" "+m[2]+(n?" ":"");if(n)g.appendChild(n)});
+ /* 47 : « ≡ » (la note a du texte) n'aide personne */
+ v.querySelectorAll(".meta .m").forEach(m=>{if(m.textContent.trim()==="≡")m.remove()});
+ /* 40 : Chercher : derniers éléments avant de taper */
+ if(U.view==="search")k24Recent();
+ /* 44 : sommaire des Réglages */
+ if(U.view==="settings"&&!v.querySelector(".ktoc")){const hd=v.querySelector(".hdr");const S=[["Apparence",/Thème|Apparence/],["Agenda",/Réunions/],["Comptes",/Comptes connectés/],["Données",/Données/]];hd&&hd.insertAdjacentHTML("afterend",`<nav class="ktoc">${S.map(([l],i)=>`<button class="tool" data-ktoc="${i}">${l}</button>`).join("")}</nav>`);v.__ktoc=S}
+ /* 48 : Fiches → Comptes connectés directement */
+ v.querySelectorAll("button,a").forEach(b=>{if(/Réglages › Comptes connectés/.test(b.textContent)&&!b.dataset.act){b.dataset.act="gotoacc";b.removeAttribute("data-nav")}});
+ k24Text(v)}
+function k24Recent(){const r=$("#sres"),q=$("#sq");if(!r||!q||q.value.trim()||r.querySelector("[data-open]"))return;const L=[...ST.items.values()].filter(i=>!i.deletedAt&&!(i.type==="task"&&i.status==="done")&&i.type!=="event").sort((a,b)=>new Date(b.updatedAt||b.createdAt)-new Date(a.updatedAt||a.createdAt)).slice(0,6);if(L.length){r.innerHTML=`<div class="grp">Récents</div>`+listHTML(L);try{kLabelAll()}catch(_){}}}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="sq"&&!e.target.value.trim())setTimeout(k24Recent,60)});
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-ktoc]");if(!t)return;const v=$("#view");const S=v.__ktoc;if(!S)return;const re=S[+t.dataset.ktoc][1];const h=[...v.querySelectorAll(".card h3,.card b,.card>b,h2,h3")].find(x=>re.test(x.textContent));h&&h.scrollIntoView({behavior:"smooth",block:"start"})});
+document.addEventListener("click",e=>{const d=document.querySelector("details.kmore[open]");if(d&&!d.contains(e.target))d.open=false},true);
+{const _r24=render;render=function(){_r24.apply(this,arguments);try{k24After()}catch(e){}}}
+/* ---------- D. fiche « Plus de réglages » (ancien éditeur) : 37, 38, 39 ---------- */
+function k24Editor(){const d=$("#drawer");if(!d||d.classList.contains("compose")||d.classList.contains("achd"))return;
+ d.querySelectorAll("button[data-edm=read]").forEach(b=>{if(b.textContent!=="Lire")b.textContent="Lire"});d.querySelectorAll("button[data-edm=write]").forEach(b=>{if(b.textContent!=="Modifier")b.textContent="Modifier"});
+ d.querySelectorAll("button").forEach(b=>{const t=b.textContent.trim();if(t==="Boîte"&&b.parentElement&&/Sans projet/.test(b.parentElement.textContent))b.remove();if(/^\+ Nouvel espace$/.test(t))b.textContent="+ Nouveau projet"});
+ const rare=[...d.querySelectorAll("button")].filter(b=>/(^|[^A-Za-zÀ-ÿ])(\.md|Copier|Focus 25 min|Enregistrer comme modèle)\s*$/.test(b.textContent.replace(/\s+/g," ").trim())&&!b.closest(".kmore"));
+ if(rare.length){let k=d.querySelector(".k24ed");if(!k){const host=rare[rare.length-1].parentElement;k=document.createElement("details");k.className="kmore k24ed";k.innerHTML=`<summary class="btn" title="Autres actions">⋯ Autres</summary><div class="kmore-m"></div>`;host.appendChild(k)}rare.forEach(b=>k.querySelector(".kmore-m").appendChild(b))}
+ k24Text(d)}
+{const _oi24=openItem;openItem=function(){const r=_oi24.apply(this,arguments);try{k24Editor()}catch(e){}return r}}
+{let pend=false;new MutationObserver(()=>{if(pend)return;pend=true;requestAnimationFrame(()=>{pend=false;const d=$("#drawer");if(d&&d.classList.contains("on")&&!d.classList.contains("compose")&&!d.classList.contains("achd")&&d.querySelector("[data-edm]"))try{k24Editor()}catch(_){}})}).observe($("#drawer"),{childList:true,subtree:true})}
+/* [B] Réunion : la pastille allumée suit le projet réellement choisi, même après un réaffichage */
+{const _r24m=render;render=function(){_r24m.apply(this,arguments);if(U.view!=="meeting")return;const s=$("#msp");if(!s)return;document.querySelectorAll("[data-mspc]").forEach(b=>b.classList.toggle("on",b.dataset.mspc===(s.value||"")))}}
+/* 9 (révisé) : en haut de page, le titre n'est pas répété ; dès qu'on fait défiler, il apparaît dans la barre du haut (règle 56 conservée) */
+{const m=()=>$("#main");const f=()=>{const e=m();document.body.classList.toggle("k24scr",!!e&&e.scrollTop>90)};document.addEventListener("scroll",f,true);const _r24s=render;render=function(){_r24s.apply(this,arguments);f()}}
 
 document.body.classList.add("sa");
 boot();
