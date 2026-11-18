@@ -1414,6 +1414,16 @@ html body.sa #drawer .cmp-more .cmp-menu{left:auto!important;right:0!important;m
 /* v21 : barre d'outils en verre, plus de rectangle blanc */
 html body.sa #drawer.compose .cmp-tools{background:var(--glass)!important;-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);border:1px solid var(--glass-edge)!important;border-radius:16px;padding:8px!important;box-shadow:inset 0 1px 0 var(--glass-line)}
 html body.sa .k21-g>.tool{white-space:normal!important;line-height:1.3}
+
+/* ================= v22 : étiquettes « ce que c'est » et « pourquoi ça compte » ================= */
+html body.sa .kkind{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 6px}
+html body.sa .kk,html body.sa .kw{font:600 10.5px/1 var(--f);letter-spacing:.08em;text-transform:uppercase;padding:4px 7px;border-radius:999px;border:1px solid var(--border-2);color:var(--text-2);background:transparent}
+html body.sa .kk-todo,html body.sa .kk-mail{color:var(--ink);border-color:var(--ink)}
+html body.sa .kk-meet,html body.sa .kk-dec,html body.sa .kk-achat,html body.sa .kk-wait{color:var(--ink)}
+html body.sa .kw-pin,html body.sa .kw-prio{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+html body.sa .kw-late{color:var(--red,#B3261E);border-color:currentColor}
+html body.sa .kw-today{color:var(--ink);border-color:var(--ink)}
+html body.sa .body .kkind{margin:0 0 3px}
 </style>
 </head>
 <body>
@@ -3488,7 +3498,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="21";
+const KVER="22";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -4128,6 +4138,33 @@ document.addEventListener("click",e=>{if(!U.cmp)return;setTimeout(()=>{const dl=
 /* [B] un menu ⋯ ouvert se ferme quand on touche ailleurs (il recouvrait la barre) ; toucher une option le ferme aussi */
 document.addEventListener("pointerdown",e=>{document.querySelectorAll("details.cmp-more[open]").forEach(d=>{if(!d.contains(e.target))d.open=false})},true);
 document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("details.cmp-more[open] .cmp-menu button");if(b){const d=b.closest("details");setTimeout(()=>{if(d&&!b.matches("[data-tpl]"))d.open=false},0)}});
+
+/* ================= v22 : chaque carte dit ce qu'elle est et pourquoi elle compte ================= */
+function kKind(it){if(!it)return null;const t=it.type;
+ if(t==="achat")return {k:"achat",l:"Dossier d'achat"};
+ if(t==="task"&&it.status==="waiting")return {k:"wait",l:"En attente"};
+ if(/^Répondre\s*:/i.test(it.title||"")||(t==="task"&&it.src==="mail"))return {k:"mail",l:"Mail à traiter"};
+ if(t==="task")return {k:"todo",l:"À faire"};
+ if(t==="meeting")return {k:"meet",l:"Réunion"};
+ if(t==="decision")return {k:"dec",l:"Décision"};
+ if(t==="event")return {k:"event",l:"Rendez-vous"};
+ return {k:"note",l:"Note"}}
+function kWhy(it){const w=[];if(!it)return w;if(it.pinned)w.push({k:"pin",l:"Épinglée"});if(it.prio)w.push({k:"prio",l:"Prioritaire"});
+ const open=!(it.type==="task"&&it.status==="done")&&!(it.type==="achat"&&it.status==="done");
+ if(it.due&&open&&it.type!=="note"){const n=diffD(it.due);if(n<0)w.push({k:"late",l:"En retard"});else if(n===0)w.push({k:"today",l:"Aujourd'hui"});else if(n===1)w.push({k:"soon",l:"Demain"})}
+ return w}
+function kChip(it,{skipTodo}={}){const k=kKind(it);if(!k)return "";const w=kWhy(it);const showK=!(skipTodo&&k.k==="todo");if(!showK&&!w.length)return "";
+ return `<div class="kkind">${showK?`<span class="kk kk-${k.k}">${esc(k.l)}</span>`:""}${w.map(x=>`<span class="kw kw-${x.k}">${esc(x.l)}</span>`).join("")}</div>`}
+function kLabelAll(){const v=$("#view");if(!v)return;
+ v.querySelectorAll(".ncard[data-open]").forEach(c=>{if(c.querySelector(".kkind"))return;const it=ST.items.get(c.dataset.open);const h=kChip(it);if(!h)return;const t=c.querySelector(".ncard-t");if(t)t.insertAdjacentHTML("beforebegin",h);else c.insertAdjacentHTML("afterbegin",h)});
+ v.querySelectorAll(".body[data-open]").forEach(b=>{if(b.querySelector(".kkind"))return;const it=ST.items.get(b.dataset.open);const h=kChip(it,{skipTodo:true});if(!h)return;const t=b.querySelector(".ttl");if(t)t.insertAdjacentHTML("beforebegin",h);else b.insertAdjacentHTML("afterbegin",h)})}
+{const _r22=render;render=function(){_r22.apply(this,arguments);try{kLabelAll()}catch(e){}}}
+/* « Reprendre » → « Tes dernières notes » : seulement de vraies notes (notes et réunions), pas les trucs à faire ni les mails */
+function kRecent(){if(U.view!=="today")return;const v=$("#view");if(!v)return;const g=[...v.querySelectorAll(".grp")].find(x=>x.textContent.trim()==="Reprendre");if(!g)return;const strip=g.nextElementSibling;
+ g.textContent="Tes dernières notes";if(!strip||!strip.classList.contains("nrow"))return;
+ strip.querySelectorAll("[data-open]").forEach(c=>{const k=kKind(ST.items.get(c.dataset.open));if(!k||!["note","meet"].includes(k.k))c.remove()});
+ if(!strip.querySelector("[data-open]")){g.remove();strip.remove()}}
+{const _r22b=render;render=function(){_r22b.apply(this,arguments);try{kRecent();kLabelAll()}catch(e){}}}
 
 document.body.classList.add("sa");
 boot();
