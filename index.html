@@ -1202,6 +1202,25 @@ html body.sa .cmp-menu .tool{justify-content:flex-start}
 #klogin .klast{margin:14px 0 0;font-size:13px;color:#A69C8B}#klogin .klast b{color:#E6D3A8;font-weight:600}
 html body.sa .kbdl{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:6px;font-size:14px;color:var(--text-2)}
 html body.sa kbd{font-family:var(--f);font-size:11.5px;border:1px solid var(--border-2);border-bottom-width:2px;border-radius:6px;padding:1px 6px;background:var(--surface);color:var(--ink)}
+
+/* ================= v17 ================= */
+html body.sa .gs-box{display:flex;align-items:center;gap:10px;border:1px solid var(--border-2);border-radius:14px;background:var(--surface);padding:0 12px;margin:4px 0 14px;min-height:52px;box-shadow:var(--e1)}
+html body.sa .gs-box:focus-within{border-color:var(--gold);box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 22%,transparent)}
+html body.sa .gs-box svg{flex:none;width:18px;height:18px;color:var(--gold)}
+html body.sa .gs-box #sq{resize:none;overflow:hidden;flex:1;min-width:0;border:0;background:transparent;color:var(--ink);font:500 17px/1.3 var(--f);padding:14px 0;outline:none;-webkit-appearance:none;appearance:none}
+
+html body.sa .gs-x{flex:none;border:0;background:transparent;color:var(--text-2);width:36px;height:36px;display:grid;place-items:center;border-radius:50%;cursor:pointer}
+html body.sa .gs-n{font-weight:500;color:var(--text-2);margin-left:4px}
+html body.sa .gs-list{display:grid;gap:6px;margin-bottom:8px}
+html body.sa .gs-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+html body.sa .gs-fi{text-align:left;width:100%;font:500 15px/1.35 var(--f);color:var(--ink);cursor:pointer}
+html body.sa .krem{border:1px solid var(--line,var(--border-2));border-radius:16px;padding:12px 14px;margin:0 0 14px;background:var(--surface)}
+html body.sa .krem-r{display:flex;gap:12px;align-items:baseline;width:100%;text-align:left;border:0;background:transparent;color:var(--ink);font:500 15px/1.35 var(--f);padding:8px 0;cursor:pointer;border-top:1px solid var(--border)}
+html body.sa .krem-r:first-of-type{border-top:0}
+html body.sa .krem-r b{color:var(--gold);font-variant-numeric:tabular-nums;min-width:46px}
+html body.sa .krem-r span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html body.sa .cmp-rem{flex-wrap:wrap}
+html body.sa .cmp-rem input.fld{width:auto;min-width:0;flex:1 1 190px;font-size:16px;min-height:40px;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -3276,7 +3295,7 @@ const PLUR=[[/(\b1|\b0) élément\(s\)/g,"$1 élément"],[/élément\(s\)/g,"él
 /* [42] pluriels aussi dans les messages */
 {const _t9=toast;toast=function(msg,undo,cls,ms){let s=String(msg);s=s.replace(/\b([01]) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2").replace(/\b(\d+) ([a-zéèêàçûô]+)\(s\)/gi,"$1 $2s").replace(/\(s\)/g,"s");return _t9(s,undo,cls,ms)}}
 /* version visible (pour vérifier la mise à jour) */
-const KVER="16";
+const KVER="17";
 {const _rs12=renderSide;renderSide=function(){_rs12();const b=$("#side .brand span");if(b&&!$("#side .kver"))b.insertAdjacentHTML("afterend",`<span class="kver">v${KVER}</span>`)}}
 {const _vs12=V.settings;V.settings=()=>_vs12().replace("<b>Système</b>",`<b>Système</b> <span class="kver">version ${KVER}</span>`)}
 
@@ -3518,6 +3537,103 @@ setInterval(()=>{if(!document.body.classList.contains("typing"))return;const a=d
 U.drPushed=false;
 new MutationObserver(()=>{const on=$("#drawer").classList.contains("on");if(on&&!U.drPushed){try{history.pushState({dr:1,v:U.view},"",location.hash);U.drPushed=true}catch(e){}}}).observe($("#drawer"),{attributes:true,attributeFilter:["class"]});
 {const _cd17=closeDrawer;closeDrawer=function(){const r=_cd17.apply(this,arguments);if(U.drPushed&&!U.popClosing){U.drPushed=false;U.skipPop=true;try{history.back()}catch(e){U.skipPop=false}}return r}}
+
+/* ================= v17 ================= */
+/* [B] téléphone : plus rien ne se bloque.
+   1) Fermer un tiroir ne fait plus history.back() (v16) : ce retour asynchrone renvoyait sur l'ancienne page
+      (toutes les options de « Plus » ramenaient à Aujourd'hui). L'entrée d'historique du tiroir devient la nouvelle page,
+      ou reste marquée « tiroir fermé » ; le bouton retour saute ces entrées mortes. */
+const kHs=()=>history.state||{};
+const kSnap=()=>{U.kCur=kHs()};
+const kArg=()=>U.view==="space"?U.space:U.view==="person"?U.person:null;
+const kHash=()=>VIEWS.includes(U.view)?"#"+U.view:location.hash;
+{const _cd=closeDrawer;closeDrawer=function(){const pushed=U.drPushed;U.drPushed=false;const r=_cd.apply(this,arguments);
+ const d=$("#drawer");if(d){d.style.transform="";d.style.transition=""}
+ if(pushed&&!U.popClosing&&!U.kNav){try{history.replaceState({v:U.view,a:kArg(),drClosed:1},"",kHash())}catch(e){}kSnap()}
+ return r}}
+{const _nv=nav;nav=function(v,arg){if(U.popping)return _nv.apply(this,arguments);
+ const st=kHs();const reuse=U.drPushed||st.dr||st.drClosed;const pv=U.view,pa=kArg();
+ U.kNav=true;const pp=U.popping;if(reuse)U.popping=true;let r;try{r=_nv.apply(this,arguments)}finally{U.kNav=false;U.popping=pp}
+ U.drPushed=false;
+ if(reuse){const changed=U.view!==pv||kArg()!==pa;try{history.replaceState({v:U.view,a:kArg(),drClosed:changed?0:1},"",kHash())}catch(e){}}
+ if($("#drawer").classList.contains("on")){try{history.pushState({dr:1,v:U.view},"",kHash());U.drPushed=true}catch(e){}}
+ kSnap();return r}}
+new MutationObserver(()=>kSnap()).observe($("#drawer"),{attributes:true,attributeFilter:["class"]});
+U.kNoHash=0;
+window.addEventListener("popstate",e=>{e.stopImmediatePropagation();U.skipPop=false;const left=U.kCur||{};const st=e.state||{};
+ if($("#drawer").classList.contains("on")){U.drPushed=false;U.popClosing=true;U.kNoHash=Date.now();try{closeDrawer()}finally{U.popClosing=false}try{history.replaceState({...st},"","#"+U.view)}catch(_){}kSnap();return}
+ if($("#pal")&&$("#pal").classList.contains("on")){closePal();kSnap();return}
+ const v=st.v||(location.hash.slice(1)||"today");const a=st.a||null;
+ const same=v===U.view&&(!a||a===kArg());
+ if(same&&(left.dr||left.drClosed)){kSnap();try{history.back()}catch(_){}return}
+ if(same){kSnap();return}
+ U.popping=true;try{if(v==="space"&&a)nav("space",a);else if(v==="person"&&a)nav("person",a);else if(VIEWS.includes(v))nav(v)}finally{U.popping=false}kSnap()},true);
+/* le changement d'adresse qui suit un retour « ferme la note » ne doit pas changer de page */
+window.addEventListener("hashchange",e=>{if(U.kNoHash&&Date.now()-U.kNoHash<600){e.stopImmediatePropagation();U.kNoHash=0}},true);
+setTimeout(kSnap,0);
+/* 2) un voile orphelin (sans tiroir ni palette) ne bloque plus l'écran */
+U.kScrim=0;
+setInterval(()=>{const s=$("#scrim");if(!s||!s.classList.contains("on")){U.kScrim=0;return}
+ const busy=$("#drawer").classList.contains("on")||($("#pal")&&$("#pal").classList.contains("on"))||($("#focus")&&$("#focus").offsetParent);
+ if(busy){U.kScrim=0;return}if(++U.kScrim>=2){s.classList.remove("on");U.kScrim=0}},500);
+/* 3) la barre du bas ne disparaît que si on écrit vraiment (zoom à deux doigts, clavier refermé : elle revient) */
+const kEditing=()=>{const a=document.activeElement;return !!(a&&document.body.contains(a)&&(/TEXTAREA|SELECT/.test(a.tagName)||(a.tagName==="INPUT"&&!/checkbox|radio|button|file/.test(a.type))||a.isContentEditable)&&a.offsetParent!==null)};
+function kKb(){if(kEditing())return;document.body.classList.remove("kbopen");document.documentElement.style.setProperty("--kb","0px")}
+if(window.visualViewport){visualViewport.addEventListener("resize",kKb);visualViewport.addEventListener("scroll",kKb)}
+document.addEventListener("focusout",()=>setTimeout(kKb,150));
+setInterval(()=>{if(document.body.classList.contains("kbopen"))kKb()},700);
+/* 4) glisser pour fermer interrompu (appel, notification, geste système) : le tiroir ne reste plus coincé */
+document.addEventListener("touchcancel",()=>{document.dispatchEvent(new Event("touchend"))},{passive:true});
+document.addEventListener("visibilitychange",()=>{if(document.hidden)return;const d=$("#drawer");if(d&&!d.classList.contains("on")){d.style.transform="";d.style.transition=""}kKb()});
+
+/* ================= [I] Recherche globale instantanée ================= */
+/* on garde le moteur existant (#sq : @personne, #projet, est:retard, fiches, mails) et on l'habille : grand champ, clavier direct, projets en tête */
+function gsMatch(txt,toks){const n=nn(txt);return toks.every(t=>n.includes(t))}
+function gsProjects(q){const toks=nn(String(q||"").replace(/(^|\s)(est|type):\S+/g," ").replace(/[@#]/g," ")).split(" ").filter(Boolean);if(!toks.length)return "";const L=spaces().filter(s=>gsMatch(s.name,toks)).slice(0,8);
+ return L.length?`<div class="gs-proj"><div class="grp">Projets <span class="gs-n">${L.length}</span></div><div class="gs-chips">${L.map(s=>`<button class="tool" data-space="${s.id}"><span class="dot" style="background:${s.color}"></span>${esc(s.name)}</button>`).join("")}</div></div>`:""}
+function gsPaint(){const sq=$("#sq"),r=$("#sres");if(!sq||!r)return;const old=r.querySelector(".gs-proj");old&&old.remove();const h=gsProjects(sq.value);if(h)r.insertAdjacentHTML("afterbegin",h)}
+{const _vs17=V.search;V.search=()=>_vs17().replace(/(<div class="sub">)[^<]*(<\/div>)/,"$1Notes, tâches, projets, fiches et mails, au fil de la frappe.$2").replace(/<div class="cap">(<textarea id="sq")[^>]*>(<\/textarea>)<\/div>/,`<div class="gs-box">${I.search}$1 rows="1" placeholder="Un mot, un nom, un projet…" autocomplete="off" autocapitalize="off" enterkeyhint="search">$2</div>`)}
+document.addEventListener("input",e=>{if(e.target&&e.target.id==="sq")gsPaint()});
+document.addEventListener("keydown",e=>{if(e.target&&e.target.id==="sq"&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();e.target.blur()}},true);
+{const _r17=render;let lastV17=null;render=function(){_r17.apply(this,arguments);if(U.view==="search"){gsPaint();if(lastV17!=="search"){const q=$("#sq");if(q)setTimeout(()=>{try{q.focus({preventScroll:true});q.setSelectionRange(q.value.length,q.value.length)}catch(_){}},60)}}lastV17=U.view}}
+/* Ctrl+K reste la palette ; Ctrl+F (PC) ouvre la recherche globale */
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="f"&&!U.cmp){e.preventDefault();e.stopImmediatePropagation();nav("search")}},true);
+
+/* ================= [I] Rappel à une heure (depuis la page d'écriture, menu ⋯) ================= */
+const kRemFmt=d=>{d=new Date(d);const t=today0();const dd=Math.round((new Date(d).setHours(0,0,0,0)-t)/864e5);return (dd===0?"aujourd'hui":dd===1?"demain":fmtDate(d))+" à "+hm(d)};
+{const _oc17=openComposer;openComposer=function(o={}){_oc17(o);const m=$("#drawer .cmp-menu");const c=U.cmp;if(!m||!c)return;const it=c.id&&ST.items.get(c.id);const on=it&&it.remindAt&&!it.reminded;
+ m.insertAdjacentHTML("afterbegin",`<button class="tool ${on?"on":""}" data-cmp3="remind">🔔 ${on?"Rappel "+esc(kRemFmt(it.remindAt)):"Me le rappeler"}</button>`)}}
+function kRemPanel(){const c=U.cmp;if(!c)return;let p=$("#cmprem");if(p){p.remove();return}const it=c.id&&ST.items.get(c.id);const on=it&&it.remindAt&&!it.reminded;
+ const now=new Date();const pad=n=>String(n).padStart(2,"0");const loc=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes());
+ const def=new Date(now.getTime()+36e5);def.setMinutes(0,0,0);
+ const anchor=$("#drawer .cmp-tools")||$("#cmpb");anchor.insertAdjacentHTML("afterend",`<div class="cmp-dq cmp-rem" id="cmprem"><span>Rappel :</span><button class="tool" data-rem="1h">Dans 1 h</button>${now.getHours()<18?`<button class="tool" data-rem="18">Ce soir 18 h</button>`:""}<button class="tool" data-rem="d9">Demain 9 h</button><input type="datetime-local" id="cmpremd" class="fld" value="${loc(on?new Date(it.remindAt):def)}" min="${loc(now)}"><button class="tool" data-rem="pick">OK</button>${on?`<button class="tool" data-rem="off">Retirer</button>`:""}</div>`);
+ const dm=$("#drawer .cmp-more");if(dm)dm.open=false}
+async function kRemSet(when){cmpSave(false);const c=U.cmp;const it=c&&c.id&&ST.items.get(c.id);if(!it){toast("Écris d'abord quelque chose.");return}
+ if(when===null){putItem({...it,remindAt:null,reminded:false});toast("Rappel retiré")}
+ else{if(isNaN(when)||when<=Date.now()+30e3){toast("Choisis une heure à venir.");return}putItem({...it,remindAt:new Date(when).toISOString(),reminded:false});toast("🔔 Rappel "+kRemFmt(when));
+  try{if("Notification" in window&&Notification.permission==="default")await Notification.requestPermission()}catch(_){}}
+ const p=$("#cmprem");p&&p.remove();const b=document.querySelector('#drawer [data-cmp3="remind"]');const n=ST.items.get(it.id);if(b){const on=n&&n.remindAt&&!n.reminded;b.classList.toggle("on",!!on);b.textContent="🔔 "+(on?"Rappel "+kRemFmt(n.remindAt):"Me le rappeler")}}
+document.addEventListener("click",e=>{const t=e.target.closest&&e.target.closest("[data-cmp3],[data-rem]");if(!t||!U.cmp)return;e.preventDefault();e.stopImmediatePropagation();
+ if(t.dataset.cmp3==="remind")return kRemPanel();const v=t.dataset.rem;const d=new Date();
+ if(v==="1h")return kRemSet(Date.now()+36e5);
+ if(v==="18"){d.setHours(18,0,0,0);return kRemSet(+d)}
+ if(v==="d9"){d.setDate(d.getDate()+1);d.setHours(9,0,0,0);return kRemSet(+d)}
+ if(v==="pick"){const x=$("#cmpremd");return kRemSet(x&&x.value?+new Date(x.value):NaN)}
+ if(v==="off")return kRemSet(null)},true);
+/* l'heure venue : notification (si autorisée) + message dans l'appli ; vérifié toutes les 20 s et au retour dans l'appli */
+async function kNotify(it){const title="Kennach · rappel";const body=it.title||"Note";
+ try{if("Notification" in window&&Notification.permission==="granted"){const r=navigator.serviceWorker&&await Promise.race([navigator.serviceWorker.getRegistration(),new Promise(z=>setTimeout(()=>z(null),800))]);if(r&&r.showNotification)await r.showNotification(title,{body,tag:"k-"+it.id,icon:"icon-192.png",data:{id:it.id}});else new Notification(title,{body,tag:"k-"+it.id})}}catch(_){}
+ toast("🔔 "+body,null,"",10000);try{navigator.vibrate&&navigator.vibrate(60)}catch(_){}}
+function kRemTick(){if(!ST||!ST.items)return;const now=Date.now();for(const it of ST.items.values()){if(it.remindAt&&!it.reminded&&!it.deletedAt&&+new Date(it.remindAt)<=now){putItem({...it,reminded:true});kNotify(it)}}}
+setInterval(kRemTick,20000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)setTimeout(kRemTick,800)});setTimeout(kRemTick,3000);
+/* notification touchée : la note s'ouvre */
+if(navigator.serviceWorker)navigator.serviceWorker.addEventListener("message",e=>{const id=e.data&&e.data.kOpen;if(id&&ST.items.get(id))setTimeout(()=>openComposer({id}),200)});
+{const p=new URLSearchParams(location.search).get("open");if(p)setTimeout(()=>{if(ST.items.get(p))openComposer({id:p});try{history.replaceState(kHs(),"",location.pathname+location.hash)}catch(_){}},1500)}
+/* Aujourd'hui : rappels à venir aujourd'hui (inséré sous l'en-tête après l'affichage) */
+function kRemBox(){if(U.view!=="today")return;const v=$("#view");if(!v||v.querySelector(".krem"))return;const t1=+today0()+864e5;const L=[...ST.items.values()].filter(i=>i.remindAt&&!i.reminded&&!i.deletedAt&&+new Date(i.remindAt)<t1).sort((a,b)=>new Date(a.remindAt)-new Date(b.remindAt));if(!L.length)return;
+ const html=`<div class="krem"><div class="lbl2" style="margin-top:0">🔔 Rappels du jour</div>${L.map(i=>`<button class="krem-r" data-open="${i.id}"><b>${hm(new Date(i.remindAt))}</b><span>${esc(i.title||"Note")}</span></button>`).join("")}</div>`;
+ const hd=v.querySelector(".hdr");if(hd)hd.insertAdjacentHTML("afterend",html);else v.insertAdjacentHTML("afterbegin",html)}
+{const _r17b=render;render=function(){_r17b.apply(this,arguments);try{kRemBox()}catch(_){}}}
 
 document.body.classList.add("sa");
 boot();
